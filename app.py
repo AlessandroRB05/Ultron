@@ -275,7 +275,7 @@ def chat_web():
         try:
             # Llamada oficial a la IA con el SDK google-genai
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-3.5-flash',
                 contents=f"Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, con una interfaz HUD futurista y un tono profesional pero imponente. Responde a la siguiente consulta del usuario: {mensaje_usuario}"
             )
             respuesta_texto = response.text
