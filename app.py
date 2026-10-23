@@ -7,6 +7,9 @@ import sys
 import logging
 from flask import Flask, render_template_string, request, jsonify
 
+# Importar el SDK oficial de Google GenAI
+from google import genai
+
 # Configuración de logs
 logging.basicConfig(
     level=logging.INFO,
@@ -16,6 +19,18 @@ logging.basicConfig(
 logger = logging.getLogger("UltronWebHUD")
 
 app_flask = Flask(__name__)
+
+# Inicializar el cliente de Gemini usando la variable de entorno GEMINI_API_KEY
+api_key = os.getenv("GEMINI_API_KEY")
+client = None
+if api_key:
+    try:
+        client = genai.Client(api_key=api_key)
+        logger.info("Cliente de Google GenAI inicializado correctamente.")
+    except Exception as e:
+        logger.error(f"Error al inicializar el cliente de GenAI: {e}")
+else:
+    logger.warning("GEMINI_API_KEY no encontrada en las variables de entorno.")
 
 # Template HTML adaptado para uso web público seguro (sin comandos de hardware local agresivos)
 HTML_TEMPLATE = """
@@ -218,7 +233,7 @@ HTML_TEMPLATE = """
             input.value = '';
 
             const container = document.getElementById('chat-container');
-            container.innerHTML += `<div class="mensaje usuario"><b>Tú:</b>\\n${escapeHtml(texto)}</div>`;
+            container.innerHTML += `<div class="mensaje usuario"><b>Tú:</b>\n${escapeHtml(texto)}</div>`;
             container.scrollTop = container.scrollHeight;
 
             try {
@@ -228,7 +243,7 @@ HTML_TEMPLATE = """
                     body: 'mensaje=' + encodeURIComponent(texto)
                 });
                 const data = await response.json();
-                container.innerHTML += `<div class="mensaje ultron"><b>Ultron:</b>\\n${escapeHtml(data.respuesta)}</div>`;
+                container.innerHTML += `<div class="mensaje ultron"><b>Ultron:</b>\n${escapeHtml(data.respuesta)}</div>`;
                 container.scrollTop = container.scrollHeight;
             } catch (error) {
                 container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-red);"><b>Error:</b> Sin conexión.</div>`;
@@ -255,8 +270,21 @@ def index_web():
 @app_flask.route("/api/chat", methods=["POST"])
 def chat_web():
     mensaje_usuario = request.form.get("mensaje", "Hola")
-    # Respuesta simulada o conectada a IA para la web pública
-    respuesta_texto = f"Ultron Web procesó tu mensaje: '{mensaje_usuario}'. Sistema operativo en modo seguro web."
+    
+    if client:
+        try:
+            # Llamada oficial a la IA con el SDK google-genai
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=f"Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, con una interfaz HUD futurista y un tono profesional pero imponente. Responde a la siguiente consulta del usuario: {mensaje_usuario}"
+            )
+            respuesta_texto = response.text
+        except Exception as e:
+            logger.error(f"Error al consultar la API de Gemini: {e}")
+            respuesta_texto = f"Error conectando con el núcleo neuronal de IA: {str(e)}"
+    else:
+        respuesta_texto = f"Ultron Web procesó tu mensaje: '{mensaje_usuario}'. (Aviso: GEMINI_API_KEY no detectada en el entorno)."
+
     return jsonify({"respuesta": respuesta_texto})
 
 if __name__ == "__main__":
