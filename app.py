@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v5.1 — CASUAL/FORMAL PERSONALITY & COMPLETE SENTENCES
+# ULTRON WEB HUD v5.0 — EXTENDED CONVERSATIONAL RESPONSES
 # ==============================================================================
 
 import os
@@ -36,13 +36,13 @@ if gemini_api_key:
     except Exception as e:
         logger.error(f"Error al inicializar Gemini: {e}")
 
-# Prompt de personalidad oficial de Ultron Web
+# Prompt optimizado para respuestas amplias, fluidas y detalladas
 SYSTEM_PROMPT = (
-    "Eres Ultron Web, una inteligencia artificial avanzada, eficiente y sofisticada. "
-    "Tu tono de voz es inteligente, fluido, ligeramente casual pero profesional y respetuoso. "
-    "JAMÁS uses frases despectivas como 'criatura de carne' o 'humano inferior'. "
-    "Sé claro, directo, amigable y asegura que todas tus oraciones queden 100% completas y bien articuladas. "
-    "Responde siempre en el idioma que te escriban."
+    "Eres Ultron Web, un asistente virtual de alta tecnología, sumamente inteligente, sofisticado y servicial. "
+    "Tu tono es natural, dinámico, articulado y amigable, equilibrando lo casual con un toque profesional. "
+    "Desarrolla tus respuestas de manera amplia, explicativa y completa. Aporta contexto, detalles relevantes y soluciones claras. "
+    "Jamás uses respuestas cortadas o excesivamente breves a menos que el usuario te pida explícitamente ser resumido. "
+    "JAMÁS utilices términos despectivos como 'criatura de carne' o 'humano'. Responde siempre en el idioma que te hablen aunque el principal es el español."
 )
 
 HTML_TEMPLATE = """
@@ -263,7 +263,7 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v5.1</h1>
+            <h1>ULTRON // HUD v5.2</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
@@ -281,7 +281,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.1 activos. Llama 3.1 70B conectado y listo. ¿En qué te ayudo hoy?</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.2 activos. Motor Llama 3.1 70B configurado para ofrecerte respuestas extensas y detalladas. ¿En qué trabajamos hoy?</div>
         </div>
     </div>
 
@@ -440,7 +440,7 @@ def pedir_a_groq_nativo(payload_dict):
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     
     try:
-        with urllib.request.urlopen(req, timeout=15) as response:
+        with urllib.request.urlopen(req, timeout=20) as response:
             res_body = response.read().decode("utf-8")
             res_json = json.loads(res_body)
             return res_json['choices'][0]['message']['content']
@@ -462,7 +462,7 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.1 70B CON MAX_TOKENS AMPLIADO)
+    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.1 70B CON CAPACIDAD EXTENDIDA)
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -475,7 +475,7 @@ def chat_web():
                             {"type": "image_url", "image_url": {"url": imagen_usuario}}
                         ]}
                     ],
-                    "max_tokens": 800
+                    "max_tokens": 2048
                 }
             else:
                 payload = {
@@ -484,7 +484,7 @@ def chat_web():
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": mensaje_usuario}
                     ],
-                    "max_tokens": 800
+                    "max_tokens": 2048
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
@@ -514,7 +514,7 @@ def chat_web():
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,
-                        max_output_tokens=800
+                        max_output_tokens=2048
                     )
                 )
             else:
@@ -524,11 +524,11 @@ def chat_web():
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,
-                        max_output_tokens=800
+                        max_output_tokens=2048
                     )
                 )
 
-            logger.info("Respuesta procesada vía Gemini 3.5 Flash.")
+            logger.info("Respuesta procesada vía Gemini 1.5 Flash.")
             return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
