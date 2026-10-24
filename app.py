@@ -1,12 +1,15 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.0.0 — ADVANCED SCI-FI HUD INTERFACE
+# ULTRON WEB HUD v4.2 — HYBRID ENGINE & MULTIMODAL VISION SYSTEM
 # ==============================================================================
 
 import os
 import sys
+import base64
 import logging
+import requests
 from flask import Flask, render_template_string, request, jsonify
 
+# SDK oficial de Google GenAI
 from google import genai
 from google.genai import types
 
@@ -19,16 +22,20 @@ logger = logging.getLogger("UltronWebHUD")
 
 app_flask = Flask(__name__)
 
-api_key = os.getenv("GEMINI_API_KEY")
-client = None
-if api_key:
+# Configuración de Llaves de API
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+groq_api_key = os.getenv("GROQ_API_KEY")
+
+gemini_client = None
+if gemini_api_key:
     try:
-        client = genai.Client(api_key=api_key)
-        logger.info("Cliente de Google GenAI inicializado correctamente.")
+        gemini_client = genai.Client(api_key=gemini_api_key)
+        logger.info("Cliente de Gemini inicializado correctamente.")
     except Exception as e:
-        logger.error(f"Error al inicializar el cliente de GenAI: {e}")
-else:
-    logger.warning("GEMINI_API_KEY no encontrada en las variables de entorno.")
+        logger.error(f"Error al inicializar Gemini: {e}")
+
+if groq_api_key:
+    logger.info("GROQ_API_KEY lista para operaciones ultrarrápidas.")
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -36,13 +43,13 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ULTRON // ADVANCED HUD SYSTEM</title>
+    <title>ULTRON // ADVANCED MULTIMODAL HUD</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
 
         :root {
             --bg-deep: #02060d;
-            --panel-bg: rgba(6, 15, 28, 0.75);
+            --panel-bg: rgba(6, 15, 28, 0.85);
             --neon-cyan: #00f3ff;
             --neon-red: #ff0055;
             --neon-amber: #ffaa00;
@@ -73,7 +80,6 @@ HTML_TEMPLATE = """
             background-size: 100% 100%, 30px 30px, 30px 30px;
         }
 
-        /* EFECTO SCANLINE CRT FUTURISTA */
         body::before {
             content: " ";
             display: block;
@@ -83,10 +89,9 @@ HTML_TEMPLATE = """
             background-size: 100% 4px;
             z-index: 1000;
             pointer-events: none;
-            opacity: 0.6;
+            opacity: 0.5;
         }
 
-        /* HEADER / BARRA DE NAVEGACIÓN FUTURISTA */
         .header-bar {
             display: flex;
             justify-content: space-between;
@@ -155,7 +160,6 @@ HTML_TEMPLATE = """
             clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
         }
 
-        /* LAYOUT PRINCIPAL */
         .main-layout {
             display: flex;
             gap: 12px;
@@ -163,7 +167,6 @@ HTML_TEMPLATE = """
             overflow: hidden;
         }
 
-        /* PANEL LATERAL DE CONTROL */
         .quick-panel {
             width: 230px;
             background: var(--panel-bg);
@@ -213,7 +216,6 @@ HTML_TEMPLATE = """
             transform: translateX(4px);
         }
 
-        /* ÁREA DE CHAT TERMINAL */
         #chat-container {
             flex: 1;
             background: var(--panel-bg);
@@ -225,18 +227,24 @@ HTML_TEMPLATE = """
             display: flex;
             flex-direction: column;
             gap: 15px;
-            position: relative;
         }
 
         .mensaje {
             padding: 12px 18px;
-            max-width: 80%;
+            max-width: 82%;
             line-height: 1.5;
             word-break: break-word;
             white-space: pre-wrap;
             font-size: 0.95rem;
-            position: relative;
             animation: slideIn 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+
+        .mensaje img {
+            max-width: 100%;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 4px;
+            margin-top: 8px;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
         }
 
         @keyframes slideIn {
@@ -264,11 +272,38 @@ HTML_TEMPLATE = """
             box-shadow: var(--red-glow);
         }
 
-        /* ENTRADA DE MENSAJES */
+        /* PREVISUALIZACIÓN DE IMAGEN ADJUNTADA */
+        #image-preview-container {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px dashed var(--neon-cyan);
+            padding: 6px 12px;
+            margin-top: 8px;
+            border-radius: 4px;
+        }
+
+        #image-preview-container img {
+            height: 40px;
+            border-radius: 2px;
+            border: 1px solid var(--neon-cyan);
+        }
+
+        .btn-remove-img {
+            background: var(--neon-red);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
         .input-area {
             display: flex;
-            gap: 10px;
-            margin-top: 12px;
+            gap: 8px;
+            margin-top: 10px;
             align-items: center;
         }
 
@@ -277,11 +312,11 @@ HTML_TEMPLATE = """
             background: var(--panel-bg);
             border: 1px solid var(--glass-border);
             color: #ffffff;
-            padding: 14px;
+            padding: 12px;
             font-family: 'Share Tech Mono', monospace;
-            font-size: 1rem;
+            font-size: 0.95rem;
             resize: none;
-            height: 52px;
+            height: 48px;
             outline: none;
             box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.1);
             clip-path: polygon(0 0, 98% 0, 100% 30%, 100% 100%, 2% 100%, 0 70%);
@@ -290,18 +325,53 @@ HTML_TEMPLATE = """
 
         textarea:focus {
             border-color: var(--neon-cyan);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4), inset 0 0 10px rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }
+
+        .action-btn {
+            background: rgba(0, 243, 255, 0.1);
+            color: var(--neon-cyan);
+            border: 1px solid var(--neon-cyan);
+            height: 48px;
+            width: 48px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
+        }
+
+        .action-btn:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-deep);
+            box-shadow: 0 0 12px var(--neon-cyan);
+        }
+
+        .action-btn.recording {
+            background: var(--neon-red) !important;
+            color: #ffffff !important;
+            border-color: var(--neon-red) !important;
+            box-shadow: var(--red-glow) !important;
+            animation: pulse-mic 1s infinite;
+        }
+
+        @keyframes pulse-mic {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
         }
 
         button.enviar {
             background: var(--neon-cyan);
             color: var(--bg-deep);
             border: none;
-            padding: 0 28px;
-            height: 52px;
+            padding: 0 24px;
+            height: 48px;
             font-family: 'Orbitron', sans-serif;
             font-weight: 900;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             letter-spacing: 2px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -312,10 +382,8 @@ HTML_TEMPLATE = """
         button.enviar:hover, button.enviar:active {
             background: #ffffff;
             box-shadow: 0 0 25px var(--neon-cyan);
-            transform: scale(1.02);
         }
 
-        /* RESPONSIVO PARA CELULARES */
         @media (max-width: 768px) {
             body { padding: 6px; }
             .header-bar { clip-path: none; padding: 8px 12px; }
@@ -332,7 +400,7 @@ HTML_TEMPLATE = """
             .panel-title { display: none; }
             .btn-shortcut { white-space: nowrap; padding: 8px 12px; font-size: 0.75rem; }
             .mensaje { max-width: 92%; font-size: 0.88rem; }
-            button.enviar { padding: 0 16px; font-size: 0.8rem; }
+            button.enviar { padding: 0 14px; font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -340,12 +408,12 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v4.0</h1>
+            <h1>ULTRON // HUD v4.2</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>AI: GEMINI-FLASH</span>
-            <span>NET: SECURE</span>
+            <span>ENGINE: HYBRID MULTIMODAL</span>
+            <span>VISION: READY</span>
         </div>
     </div>
     
@@ -354,41 +422,151 @@ HTML_TEMPLATE = """
             <div class="panel-title">// COMANDOS</div>
             <button class="btn-shortcut" onclick="ejecutarComandoWeb('Hola Ultron, preséntate brevemente.')">⚡ SALUDO</button>
             <button class="btn-shortcut" onclick="ejecutarComandoWeb('Cuéntame un chiste técnico corto.')">🃏 CHISTE</button>
-            <button class="btn-shortcut" onclick="ejecutarComandoWeb('¿Cuál es tu estado de procesamiento?')">📊 DIAGNÓSTICO</button>
+            <button class="btn-shortcut" onclick="ejecutarComandoWeb('¿Cuál es tu estado de procesamiento y visión?')">📊 DIAGNÓSTICO</button>
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas neuronales acoplados. HUD de combate activo. ¿Cuáles son tus órdenes?</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas de texto, voz y visión multimodales en línea. Adjunta una imagen o escribe para comenzar.</div>
         </div>
     </div>
 
+    <!-- PREVISUALIZACIÓN DE FOTO ADJUNTADA -->
+    <div id="image-preview-container">
+        <img id="img-preview" src="" alt="Vista previa">
+        <span id="img-name" style="font-size:0.8rem; color:var(--neon-cyan);">Imagen adjuntada</span>
+        <button class="btn-remove-img" onclick="cancelarImagen()">✕</button>
+    </div>
+
     <div class="input-area">
-        <textarea id="userInput" placeholder="Ingresa comando de voz o texto..." autofocus onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();enviarMensaje();}"></textarea>
+        <button class="action-btn" onclick="document.getElementById('fileInput').click()" title="Adjuntar Imagen">📷</button>
+        <button id="micBtn" class="action-btn" onclick="toggleVoz()" title="Hablar por micrófono">🎤</button>
+        
+        <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="procesarImagenAdjunta(event)">
+        
+        <textarea id="userInput" placeholder="Escribe tu mensaje o adjunta una imagen..." autofocus onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();enviarMensaje();}"></textarea>
         <button class="enviar" onclick="enviarMensaje()">TRANSMITIR</button>
     </div>
 
     <script>
+        let imagenBase64 = null;
+        let recognition = null;
+        let isRecording = false;
+
+        function procesarImagenAdjunta(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagenBase64 = e.target.result;
+                document.getElementById('img-preview').src = imagenBase64;
+                document.getElementById('img-name').innerText = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
+                document.getElementById('image-preview-container').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function cancelarImagen() {
+            imagenBase64 = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('image-preview-container').style.display = 'none';
+        }
+
+        function toggleVoz() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                mostrarMsgSistema("Navegador sin soporte de voz nativo. Utiliza Chrome, Edge o Safari.");
+                return;
+            }
+
+            if (isRecording) {
+                if (recognition) recognition.stop();
+                stopRecording();
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                document.getElementById('micBtn').classList.add('recording');
+                mostrarMsgSistema("🎤 Escuchando... habla ahora.");
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('userInput').value = transcript;
+                stopRecording();
+                enviarMensaje();
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Error de micrófono:", event.error);
+                stopRecording();
+                if (event.error === 'not-allowed') {
+                    mostrarMsgSistema("Permiso bloqueado. Haz clic en el candado 🔒 al lado de la URL para habilitar el micrófono.");
+                } else {
+                    mostrarMsgSistema("Estado de voz: " + event.error);
+                }
+            };
+
+            recognition.onend = () => { stopRecording(); };
+
+            try { recognition.start(); } catch (e) { stopRecording(); }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            document.getElementById('micBtn').classList.remove('recording');
+        }
+
+        function mostrarMsgSistema(texto) {
+            const container = document.getElementById('chat-container');
+            container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-amber);"><b>[SISTEMA]:</b> ${texto}</div>`;
+            container.scrollTop = container.scrollHeight;
+        }
+
         async function enviarMensaje() {
             const input = document.getElementById('userInput');
             const texto = input.value.trim();
-            if (!texto) return;
-            input.value = '';
+            
+            if (!texto && !imagenBase64) return;
 
             const container = document.getElementById('chat-container');
-            container.innerHTML += `<div class="mensaje usuario"><b>TÚ:</b>\n${escapeHtml(texto)}</div>`;
+            
+            let htmlUsuario = `<b>TÚ:</b>\n${escapeHtml(texto)}`;
+            if (imagenBase64) {
+                htmlUsuario += `<br><img src="${imagenBase64}">`;
+            }
+
+            container.innerHTML += `<div class="mensaje usuario">${htmlUsuario}</div>`;
             container.scrollTop = container.scrollHeight;
+
+            const dataToSend = new URLSearchParams();
+            dataToSend.append('mensaje', texto || 'Analiza esta imagen');
+            if (imagenBase64) {
+                dataToSend.append('imagen', imagenBase64);
+            }
+
+            input.value = '';
+            const imgAux = imagenBase64;
+            cancelarImagen();
 
             try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'mensaje=' + encodeURIComponent(texto)
+                    body: dataToSend
                 });
                 const data = await response.json();
                 container.innerHTML += `<div class="mensaje ultron"><b>ULTRON:</b>\n${escapeHtml(data.respuesta)}</div>`;
                 container.scrollTop = container.scrollHeight;
             } catch (error) {
-                container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-red);"><b>ERROR:</b> Fallo en enlace cuántico con servidor.</div>`;
+                container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-red);"><b>ERROR:</b> Fallo de enlace con el servidor.</div>`;
             }
         }
 
@@ -405,6 +583,64 @@ HTML_TEMPLATE = """
 </html>
 """
 
+def consultar_groq_vision(mensaje, img_b64):
+    """Procesa texto e imagen usando Llama-3 Vision en Groq"""
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {groq_api_key}",
+        "Content-Type": "application/json"
+    }
+
+    content_list = [{"type": "text", "text": mensaje}]
+    if img_b64:
+        content_list.append({
+            "type": "image_url",
+            "image_url": {"url": img_b64}
+        })
+
+    payload = {
+        "model": "llama-3.2-11b-vision-preview",
+        "messages": [
+            {
+                "role": "system", 
+                "content": "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. Responde siempre en español, conciso (máximo 3 frases)."
+            },
+            {"role": "user", "content": content_list}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 300
+    }
+    res = requests.post(url, json=payload, headers=headers, timeout=12)
+    if res.status_code == 200:
+        return res.json()['choices'][0]['message']['content']
+    else:
+        raise Exception(f"Groq Vision error {res.status_code}: {res.text}")
+
+def consultar_groq_texto(mensaje):
+    """Procesa texto usando Llama 3.3 en Groq"""
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {groq_api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {
+                "role": "system", 
+                "content": "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. Responde siempre en español, conciso (máximo 3 frases)."
+            },
+            {"role": "user", "content": mensaje}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 250
+    }
+    res = requests.post(url, json=payload, headers=headers, timeout=8)
+    if res.status_code == 200:
+        return res.json()['choices'][0]['message']['content']
+    else:
+        raise Exception(f"Groq Texto error {res.status_code}: {res.text}")
+
 @app_flask.route("/")
 def index_web():
     return render_template_string(HTML_TEMPLATE)
@@ -412,30 +648,67 @@ def index_web():
 @app_flask.route("/api/chat", methods=["POST"])
 def chat_web():
     mensaje_usuario = request.form.get("mensaje", "Hola")
+    imagen_usuario = request.form.get("imagen", None)
     
-    if client:
+    respuesta_texto = ""
+
+    # 1. Intentar primero con Groq
+    if groq_api_key:
+        try:
+            if imagen_usuario:
+                respuesta_texto = consultar_groq_vision(mensaje_usuario, imagen_usuario)
+                logger.info("Respuesta visual procesada vía Groq Llama Vision.")
+            else:
+                respuesta_texto = consultar_groq_texto(mensaje_usuario)
+                logger.info("Respuesta de texto procesada vía Groq Llama 3.")
+            return jsonify({"respuesta": respuesta_texto})
+        except Exception as e_groq:
+            logger.warning(f"Groq no disponible: {e_groq}. Saltando a Gemini...")
+
+    # 2. Respaldo (Fallback) con Gemini
+    if gemini_client:
         try:
             system_instruction = (
-                "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. "
-                "Responde con tono profesional, tecnológico e imponente. Mantén tus respuestas breves y directas (máximo 2 a 3 frases)."
+                "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado y conciso. "
+                "Responde en español, de forma breve e imponente (máximo 3 oraciones)."
             )
+            
+            if imagen_usuario and "," in imagen_usuario:
+                header, encoded = imagen_usuario.split(",", 1)
+                mime_type = header.split(";")[0].split(":")[1]
+                image_bytes = base64.b64decode(encoded)
 
-            response = client.models.generate_content(
-                model='gemini-3.5-flash',
-                contents=mensaje_usuario,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.7,
-                    max_output_tokens=300
+                response = gemini_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=[
+                        types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                        mensaje_usuario
+                    ],
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.7,
+                        max_output_tokens=300
+                    )
                 )
-            )
-            respuesta_texto = response.text
+            else:
+                response = gemini_client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=mensaje_usuario,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.7,
+                        max_output_tokens=250
+                    )
+                )
 
-        except Exception as e:
-            logger.error(f"Error al consultar la API de Gemini: {e}")
-            respuesta_texto = f"Error en la red neuronal: {str(e)}"
+            respuesta_texto = response.text
+            logger.info("Respuesta procesada vía Gemini 2.5 Flash.")
+            return jsonify({"respuesta": respuesta_texto})
+        except Exception as e_gemini:
+            logger.error(f"Error también en Gemini: {e_gemini}")
+            respuesta_texto = "Sistemas neuronales saturados. Por favor reintenta en un momento."
     else:
-        respuesta_texto = f"Ultron Web procesó tu mensaje: '{mensaje_usuario}'. (Aviso: GEMINI_API_KEY no detectada)."
+        respuesta_texto = "Error: No hay motores de Inteligencia Artificial activos."
 
     return jsonify({"respuesta": respuesta_texto})
 
