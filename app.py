@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v5.0 — EXTENDED CONVERSATIONAL RESPONSES
+# ULTRON WEB HUD v5.3 — ULTIMATE ENGINE & PERSONALITY STABILITY
 # ==============================================================================
 
 import os
@@ -42,7 +42,7 @@ SYSTEM_PROMPT = (
     "Tu tono es natural, dinámico, articulado y amigable, equilibrando lo casual con un toque profesional. "
     "Desarrolla tus respuestas de manera amplia, explicativa y completa. Aporta contexto, detalles relevantes y soluciones claras. "
     "Jamás uses respuestas cortadas o excesivamente breves a menos que el usuario te pida explícitamente ser resumido. "
-    "JAMÁS utilices términos despectivos como 'criatura de carne' o 'humano'. Responde siempre en el idioma que te hablen aunque el principal es el español."
+    "JAMÁS utilices términos despectivos como 'criatura de carne' o 'humano'. Responde siempre en español con impecable ortografía."
 )
 
 HTML_TEMPLATE = """
@@ -263,11 +263,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v5.2</h1>
+            <h1>ULTRON // HUD v5.3</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: LLAMA 3.1 70B</span>
+            <span>ENGINE: LLAMA 3.3 70B</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -281,7 +281,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.2 activos. Motor Llama 3.1 70B configurado para ofrecerte respuestas extensas y detalladas. ¿En qué trabajamos hoy?</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.3 activos. Motor Llama 3.3 70B totalmente optimizado. ¿En qué te ayudo hoy?</div>
         </div>
     </div>
 
@@ -462,7 +462,7 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.1 70B CON CAPACIDAD EXTENDIDA)
+    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.3 70B VERSATILE OFICIAL Y ACTIVO)
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -479,7 +479,7 @@ def chat_web():
                 }
             else:
                 payload = {
-                    "model": "llama-3.1-70b-versatile",
+                    "model": "llama-3.3-70b-versatile",
                     "messages": [
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": mensaje_usuario}
@@ -488,7 +488,7 @@ def chat_web():
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta procesada vía Groq Llama 3.1 70B.")
+            logger.info("Respuesta procesada vía Groq Llama 3.3 70B.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
@@ -528,7 +528,7 @@ def chat_web():
                     )
                 )
 
-            logger.info("Respuesta procesada vía Gemini 1.5 Flash.")
+            logger.info("Respuesta procesada vía Gemini 3.5 Flash.")
             return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
