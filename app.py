@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v5.5 — BULLETPROOF STABLE ENGINE
+# ULTRON WEB HUD — ORIGINAL STABLE ENGINE RESTORED
 # ==============================================================================
 
 import os
@@ -263,7 +263,7 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v5.5</h1>
+            <h1>ULTRON // HUD STABLE</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
@@ -281,7 +281,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.5 activos. Enlace neuronal estable establecido. ¡Listo para ayudarte!</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas estables activos. Enlace neuronal establecido. ¿En qué te ayudo hoy?</div>
         </div>
     </div>
 
@@ -371,10 +371,14 @@ HTML_TEMPLATE = """
             document.getElementById('micBtn').classList.remove('recording');
         }
 
-        function mostrarMsgSistema(texto) {
+        fn_msg_sys = function(texto) {
             const container = document.getElementById('chat-container');
             container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-amber);"><b>[SISTEMA]:</b> ${texto}</div>`;
             container.scrollTop = container.scrollHeight;
+        };
+
+        function mostrarMsgSistema(texto) {
+            fn_msg_sys(texto);
         }
 
         async function enviarMensaje() {
@@ -462,7 +466,7 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (USANDO EL MODELO ESTABLE llama-3.1-8b-instant)
+    # 1. MOTOR PRIMARIO: GROQ (Usando un modelo genérico ligero súper compatible)
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -475,7 +479,7 @@ def chat_web():
                             {"type": "image_url", "image_url": {"url": imagen_usuario}}
                         ]}
                     ],
-                    "max_tokens": 2048
+                    "max_tokens": 1500
                 }
             else:
                 payload = {
@@ -484,11 +488,11 @@ def chat_web():
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": mensaje_usuario}
                     ],
-                    "max_tokens": 2048
+                    "max_tokens": 1500
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta procesada vía Groq.")
+            logger.info("Respuesta procesada exitosamente vía Groq.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
@@ -497,7 +501,7 @@ def chat_web():
     else:
         err_groq_msg = "Variable GROQ_API_KEY no configurada."
 
-    # 2. MOTOR DE RESPALDO: GEMINI (USANDO gemini-1.5-flash)
+    # 2. MOTOR DE RESPALDO: GEMINI (Usando el SDK estándar nativo)
     if gemini_client:
         try:
             if imagen_usuario and "," in imagen_usuario:
@@ -506,7 +510,7 @@ def chat_web():
                 image_bytes = base64.b64decode(encoded)
 
                 response = gemini_client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='gemini-2.5-flash',
                     contents=[
                         types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                         mensaje_usuario
@@ -514,17 +518,17 @@ def chat_web():
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,
-                        max_output_tokens=2048
+                        max_output_tokens=1500
                     )
                 )
             else:
                 response = gemini_client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='gemini-2.5-flash',
                     contents=mensaje_usuario,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,
-                        max_output_tokens=2048
+                        max_output_tokens=1500
                     )
                 )
 
@@ -533,7 +537,7 @@ def chat_web():
             
         except Exception as e_gemini:
             err_gemini_msg = str(e_gemini)
-            logger.error(f"Error en Gemini: {err_gemini_msg}")
+            logger.error(f"Error en Gemini: {e_gemini}")
     else:
         err_gemini_msg = "Cliente Gemini no configurado."
 
