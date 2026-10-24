@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.8 — DEFINITIVE FIXED MODEL IDS
+# ULTRON WEB HUD v4.9 — UPDATED TO CURRENT STABLE MODELS
 # ==============================================================================
 
 import os
@@ -11,6 +11,7 @@ import urllib.request
 import urllib.error
 from flask import Flask, render_template_string, request, jsonify
 
+# SDK oficial de Google GenAI
 from google import genai
 from google.genai import types
 
@@ -23,6 +24,7 @@ logger = logging.getLogger("UltronWebHUD")
 
 app_flask = Flask(__name__)
 
+# Configuración de Llaves de API
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 groq_api_key = os.getenv("GROQ_API_KEY")
 
@@ -30,7 +32,7 @@ gemini_client = None
 if gemini_api_key:
     try:
         gemini_client = genai.Client(api_key=gemini_api_key)
-        logger.info("Cliente de Gemini inicializado.")
+        logger.info("Cliente de Gemini inicializado correctamente.")
     except Exception as e:
         logger.error(f"Error al inicializar Gemini: {e}")
 
@@ -252,11 +254,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v4.8</h1>
+            <h1>ULTRON // HUD v4.9</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: LLAMA-3 70B</span>
+            <span>ENGINE: HYBRID ACTIVE</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -270,7 +272,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas online. Motor Llama 3 70B listo para procesamiento.</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas listos. Conexión establecida con las APIs actualizadas.</div>
         </div>
     </div>
 
@@ -451,7 +453,7 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. GROQ (Modelo exacto de producción de 70B en Groq)
+    # 1. MOTOR PRIMARIO: GROQ (Usando el ID oficial activo llama-3.3-70b-versatile)
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -468,7 +470,7 @@ def chat_web():
                 }
             else:
                 payload = {
-                    "model": "llama3-70b-8192",
+                    "model": "llama-3.3-70b-versatile",
                     "messages": [
                         {"role": "system", "content": "Eres Ultron, un asistente cibernético imponente y conciso. Responde en español, máximo 3 frases."},
                         {"role": "user", "content": mensaje_usuario}
@@ -477,7 +479,7 @@ def chat_web():
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta exitosa procesada vía Groq Llama 3 70B.")
+            logger.info("Respuesta procesada vía Groq Llama 3.3.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
@@ -486,7 +488,7 @@ def chat_web():
     else:
         err_groq_msg = "Variable GROQ_API_KEY no configurada."
 
-    # 2. GEMINI (Modelo v2.0 Flash)
+    # 2. MOTOR DE RESPALDO: GEMINI (Usando el modelo activo que sugirió Google: gemini-3.8-flash)
     if gemini_client:
         try:
             system_instruction = "Eres Ultron, un asistente cibernético imponente. Responde en español, máximo 3 frases."
@@ -497,7 +499,7 @@ def chat_web():
                 image_bytes = base64.b64decode(encoded)
 
                 response = gemini_client.models.generate_content(
-                    model='gemini-2.0-flash',
+                    model='gemini-3.8-flash',
                     contents=[
                         types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                         mensaje_usuario
@@ -510,7 +512,7 @@ def chat_web():
                 )
             else:
                 response = gemini_client.models.generate_content(
-                    model='gemini-2.0-flash',
+                    model='gemini-3.8-flash',
                     contents=mensaje_usuario,
                     config=types.GenerateContentConfig(
                         system_instruction=system_instruction,
@@ -519,7 +521,7 @@ def chat_web():
                     )
                 )
 
-            logger.info("Respuesta procesada vía Gemini 2.0 Flash.")
+            logger.info("Respuesta procesada vía Gemini 3.8 Flash.")
             return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
