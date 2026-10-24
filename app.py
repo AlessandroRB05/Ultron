@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.5 — HYBRID ENGINE WITH DIRECT API ERROR DIAGNOSTICS
+# ULTRON WEB HUD v4.7 — HIGH-PERFORMANCE LLAMA 3.3 ENGINE
 # ==============================================================================
 
 import os
@@ -254,11 +254,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v4.5</h1>
+            <h1>ULTRON // HUD v4.7</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: HYBRID DIAGNOSTIC</span>
+            <span>ENGINE: LLAMA 3.3 70B</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -272,7 +272,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas de diagnóstico v4.5 activos. Transmite tu mensaje para verificar enlace con la API.</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nMotor Llama 3.3 70B activo. Sistemas de texto, voz y visión preparados.</div>
         </div>
     </div>
 
@@ -420,7 +420,7 @@ HTML_TEMPLATE = """
 """
 
 def pedir_a_groq_nativo(payload_dict):
-    """Petición nativa a Groq devolviendo detalles de errores de red o autenticación"""
+    """Petición nativa a Groq con Llama 3.3 70B"""
     if not groq_api_key:
         raise Exception("GROQ_API_KEY no existe en el entorno")
 
@@ -437,7 +437,7 @@ def pedir_a_groq_nativo(payload_dict):
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     
     try:
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=12) as response:
             res_body = response.read().decode("utf-8")
             res_json = json.loads(res_body)
             return res_json['choices'][0]['message']['content']
@@ -459,7 +459,7 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ
+    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.3 70B)
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -485,14 +485,14 @@ def chat_web():
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta exitosa procesada vía Groq Llama 3.")
+            logger.info("Respuesta exitosa procesada vía Groq Llama 3.3 70B.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
             err_groq_msg = str(e_groq)
             logger.warning(f"Groq fallo: {err_groq_msg}")
     else:
-        err_groq_msg = "Variable GROQ_API_KEY no configurada en Render."
+        err_groq_msg = "Variable GROQ_API_KEY no configurada."
 
     # 2. MOTOR DE RESPALDO: GEMINI
     if gemini_client:
@@ -527,18 +527,17 @@ def chat_web():
                     )
                 )
 
-            logger.info("Respuesta procesada vía Gemini 1.5 Flash de respaldo.")
+            logger.info("Respuesta procesada vía Gemini de respaldo.")
             return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
             err_gemini_msg = str(e_gemini)
             logger.error(f"Error en Gemini: {err_gemini_msg}")
     else:
-        err_gemini_msg = "Cliente Gemini no configurado o sin GEMINI_API_KEY."
+        err_gemini_msg = "Cliente Gemini no configurado."
 
-    # Si ambos fallaron, mostramos el diagnostico real
     return jsonify({
-        "respuesta": f"[DIAGNOSTICO DE ERROR]:\n- GROQ: {err_groq_msg}\n- GEMINI: {err_gemini_msg}"
+        "respuesta": f"[ERROR EN SISTEMAS]:\n- GROQ: {err_groq_msg}\n- GEMINI: {err_gemini_msg}"
     })
 
 if __name__ == "__main__":
