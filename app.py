@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.4 — HYBRID ENGINE WITH FIX FOR HTTP 403 & GEMINI MODEL
+# ULTRON WEB HUD v4.5 — HYBRID ENGINE WITH DIRECT API ERROR DIAGNOSTICS
 # ==============================================================================
 
 import os
@@ -36,9 +36,6 @@ if gemini_api_key:
     except Exception as e:
         logger.error(f"Error al inicializar Gemini: {e}")
 
-if groq_api_key:
-    logger.info("GROQ_API_KEY detectada en el entorno.")
-
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="es">
@@ -60,21 +57,15 @@ HTML_TEMPLATE = """
             --red-glow: 0 0 12px rgba(255, 0, 85, 0.8);
         }
 
-        * {
-            box-sizing: border-box;
-            user-select: none;
-        }
+        * { box-sizing: border-box; user-select: none; }
 
         body {
             background-color: var(--bg-deep);
             color: #d1f7ff;
             font-family: 'Share Tech Mono', monospace;
-            margin: 0;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            margin: 0; padding: 12px;
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
             background-image: 
                 radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.05) 0%, transparent 80%),
                 linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
@@ -83,53 +74,32 @@ HTML_TEMPLATE = """
         }
 
         body::before {
-            content: " ";
-            display: block;
-            position: absolute;
+            content: " "; display: block; position: absolute;
             top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
-            background-size: 100% 4px;
-            z-index: 1000;
-            pointer-events: none;
-            opacity: 0.5;
+            background-size: 100% 4px; z-index: 1000;
+            pointer-events: none; opacity: 0.5;
         }
 
         .header-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--panel-bg); border: 1px solid var(--glass-border);
             box-shadow: 0 0 15px rgba(0, 243, 255, 0.2), inset 0 0 15px rgba(0, 243, 255, 0.1);
-            backdrop-filter: blur(8px);
-            padding: 10px 20px;
-            margin-bottom: 12px;
+            backdrop-filter: blur(8px); padding: 10px 20px; margin-bottom: 12px;
             clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
         }
 
-        .brand-area {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+        .brand-area { display: flex; align-items: center; gap: 15px; }
 
         .reactor-core {
-            width: 22px;
-            height: 22px;
-            border: 2px solid var(--neon-cyan);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 8px var(--neon-cyan);
-            animation: pulse-core 1.5s infinite alternate ease-in-out;
-            position: relative;
+            width: 22px; height: 22px; border: 2px solid var(--neon-cyan);
+            border-radius: 50%; box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 8px var(--neon-cyan);
+            animation: pulse-core 1.5s infinite alternate ease-in-out; position: relative;
         }
 
         .reactor-core::after {
-            content: '';
-            position: absolute;
-            top: 3px; left: 3px; right: 3px; bottom: 3px;
-            background: var(--neon-cyan);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--neon-cyan);
+            content: ''; position: absolute; top: 3px; left: 3px; right: 3px; bottom: 3px;
+            background: var(--neon-cyan); border-radius: 50%; box-shadow: 0 0 8px var(--neon-cyan);
         }
 
         @keyframes pulse-core {
@@ -138,115 +108,60 @@ HTML_TEMPLATE = """
         }
 
         h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 900;
-            margin: 0;
-            letter-spacing: 4px;
-            color: #ffffff;
-            text-shadow: var(--text-glow);
+            font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 900;
+            margin: 0; letter-spacing: 4px; color: #ffffff; text-shadow: var(--text-glow);
         }
 
-        .hud-metrics {
-            display: flex;
-            gap: 15px;
-            font-size: 0.75rem;
-            color: var(--neon-cyan);
-            letter-spacing: 1px;
-        }
+        .hud-metrics { display: flex; gap: 15px; font-size: 0.75rem; color: var(--neon-cyan); letter-spacing: 1px; }
 
         .hud-metrics span {
-            background: rgba(0, 243, 255, 0.1);
-            border: 1px solid rgba(0, 243, 255, 0.3);
-            padding: 3px 8px;
-            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+            background: rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3);
+            padding: 3px 8px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
         }
 
-        .main-layout {
-            display: flex;
-            gap: 12px;
-            flex: 1;
-            overflow: hidden;
-        }
+        .main-layout { display: flex; gap: 12px; flex: 1; overflow: hidden; }
 
         .quick-panel {
-            width: 230px;
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
-            box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.1);
-            backdrop-filter: blur(8px);
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow-y: auto;
+            width: 230px; background: var(--panel-bg); border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.1); backdrop-filter: blur(8px);
+            padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
             clip-path: polygon(0 0, 100% 0, 100% 96%, 88% 100%, 0 100%);
         }
 
         .panel-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.8rem;
-            color: var(--neon-cyan);
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-            border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 5px;
-            text-shadow: var(--text-glow);
+            font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: var(--neon-cyan);
+            letter-spacing: 2px; margin-bottom: 8px; border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 5px; text-shadow: var(--text-glow);
         }
 
         .btn-shortcut {
-            background: rgba(0, 243, 255, 0.05);
-            color: #d1f7ff;
-            border: 1px solid rgba(0, 243, 255, 0.3);
-            padding: 12px;
-            text-align: left;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.25s ease;
+            background: rgba(0, 243, 255, 0.05); color: #d1f7ff; border: 1px solid rgba(0, 243, 255, 0.3);
+            padding: 12px; text-align: left; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.25s ease;
             clip-path: polygon(8% 0, 100% 0, 100% 70%, 92% 100%, 0 100%, 0 30%);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: flex; align-items: center; gap: 8px;
         }
 
         .btn-shortcut:hover {
-            background: rgba(0, 243, 255, 0.25);
-            color: #ffffff;
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
-            transform: translateX(4px);
+            background: rgba(0, 243, 255, 0.25); color: #ffffff; border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); transform: translateX(4px);
         }
 
         #chat-container {
-            flex: 1;
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
+            flex: 1; background: var(--panel-bg); border: 1px solid var(--glass-border);
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9), 0 0 15px rgba(0, 243, 255, 0.1);
-            backdrop-filter: blur(8px);
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            backdrop-filter: blur(8px); overflow-y: auto; padding: 20px;
+            display: flex; flex-direction: column; gap: 15px;
         }
 
         .mensaje {
-            padding: 12px 18px;
-            max-width: 82%;
-            line-height: 1.5;
-            word-break: break-word;
-            white-space: pre-wrap;
-            font-size: 0.95rem;
-            animation: slideIn 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+            padding: 12px 18px; max-width: 82%; line-height: 1.5; word-break: break-word;
+            white-space: pre-wrap; font-size: 0.95rem; animation: slideIn 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
         }
 
         .mensaje img {
-            max-width: 100%;
-            border: 1px solid var(--neon-cyan);
-            border-radius: 4px;
-            margin-top: 8px;
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+            max-width: 100%; border: 1px solid var(--neon-cyan); border-radius: 4px;
+            margin-top: 8px; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
         }
 
         @keyframes slideIn {
@@ -255,135 +170,69 @@ HTML_TEMPLATE = """
         }
 
         .usuario {
-            background: rgba(0, 243, 255, 0.08);
-            color: #a8f5ff;
-            align-self: flex-end;
-            border: 1px solid rgba(0, 243, 255, 0.4);
-            border-right: 4px solid var(--neon-cyan);
+            background: rgba(0, 243, 255, 0.08); color: #a8f5ff; align-self: flex-end;
+            border: 1px solid rgba(0, 243, 255, 0.4); border-right: 4px solid var(--neon-cyan);
             clip-path: polygon(3% 0, 100% 0, 100% 100%, 0 100%, 0 25%);
             box-shadow: 0 0 10px rgba(0, 243, 255, 0.15);
         }
 
         .ultron {
-            background: rgba(255, 0, 85, 0.08);
-            color: #ffb5c8;
-            align-self: flex-start;
-            border: 1px solid rgba(255, 0, 85, 0.4);
-            border-left: 4px solid var(--neon-red);
+            background: rgba(255, 0, 85, 0.08); color: #ffb5c8; align-self: flex-start;
+            border: 1px solid rgba(255, 0, 85, 0.4); border-left: 4px solid var(--neon-red);
             clip-path: polygon(0 0, 97% 0, 100% 25%, 100% 100%, 0 100%);
             box-shadow: var(--red-glow);
         }
 
         #image-preview-container {
-            display: none;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0, 243, 255, 0.1);
-            border: 1px dashed var(--neon-cyan);
-            padding: 6px 12px;
-            margin-top: 8px;
-            border-radius: 4px;
+            display: none; align-items: center; gap: 10px; background: rgba(0, 243, 255, 0.1);
+            border: 1px dashed var(--neon-cyan); padding: 6px 12px; margin-top: 8px; border-radius: 4px;
         }
 
-        #image-preview-container img {
-            height: 40px;
-            border-radius: 2px;
-            border: 1px solid var(--neon-cyan);
-        }
+        #image-preview-container img { height: 40px; border-radius: 2px; border: 1px solid var(--neon-cyan); }
 
         .btn-remove-img {
-            background: var(--neon-red);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 0.8rem;
-            padding: 2px 6px;
-            border-radius: 2px;
+            background: var(--neon-red); color: white; border: none; cursor: pointer;
+            font-size: 0.8rem; padding: 2px 6px; border-radius: 2px;
         }
 
-        .input-area {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            align-items: center;
-        }
+        .input-area { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
 
         textarea {
-            flex: 1;
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
-            color: #ffffff;
-            padding: 12px;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.95rem;
-            resize: none;
-            height: 48px;
-            outline: none;
+            flex: 1; background: var(--panel-bg); border: 1px solid var(--glass-border);
+            color: #ffffff; padding: 12px; font-family: 'Share Tech Mono', monospace;
+            font-size: 0.95rem; resize: none; height: 48px; outline: none;
             box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.1);
-            clip-path: polygon(0 0, 98% 0, 100% 30%, 100% 100%, 2% 100%, 0 70%);
-            transition: all 0.3s;
+            clip-path: polygon(0 0, 98% 0, 100% 30%, 100% 100%, 2% 100%, 0 70%); transition: all 0.3s;
         }
 
-        textarea:focus {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
-        }
+        textarea:focus { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0, 243, 255, 0.4); }
 
         .action-btn {
-            background: rgba(0, 243, 255, 0.1);
-            color: var(--neon-cyan);
-            border: 1px solid var(--neon-cyan);
-            height: 48px;
-            width: 48px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: rgba(0, 243, 255, 0.1); color: var(--neon-cyan); border: 1px solid var(--neon-cyan);
+            height: 48px; width: 48px; font-size: 1.2rem; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
             clip-path: polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%);
         }
 
-        .action-btn:hover {
-            background: var(--neon-cyan);
-            color: var(--bg-deep);
-            box-shadow: 0 0 12px var(--neon-cyan);
-        }
+        .action-btn:hover { background: var(--neon-cyan); color: var(--bg-deep); box-shadow: 0 0 12px var(--neon-cyan); }
 
         .action-btn.recording {
-            background: var(--neon-red) !important;
-            color: #ffffff !important;
-            border-color: var(--neon-red) !important;
-            box-shadow: var(--red-glow) !important;
+            background: var(--neon-red) !important; color: #ffffff !important;
+            border-color: var(--neon-red) !important; box-shadow: var(--red-glow) !important;
             animation: pulse-mic 1s infinite;
         }
 
-        @keyframes pulse-mic {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
+        @keyframes pulse-mic { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
         button.enviar {
-            background: var(--neon-cyan);
-            color: var(--bg-deep);
-            border: none;
-            padding: 0 24px;
-            height: 48px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 0.85rem;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            background: var(--neon-cyan); color: var(--bg-deep); border: none; padding: 0 24px;
+            height: 48px; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 0.85rem;
+            letter-spacing: 2px; cursor: pointer; transition: all 0.3s ease;
             clip-path: polygon(15% 0, 100% 0, 100% 70%, 85% 100%, 0 100%, 0 30%);
             box-shadow: 0 0 15px var(--neon-cyan);
         }
 
-        button.enviar:hover, button.enviar:active {
-            background: #ffffff;
-            box-shadow: 0 0 25px var(--neon-cyan);
-        }
+        button.enviar:hover, button.enviar:active { background: #ffffff; box-shadow: 0 0 25px var(--neon-cyan); }
 
         @media (max-width: 768px) {
             body { padding: 6px; }
@@ -391,12 +240,8 @@ HTML_TEMPLATE = """
             .hud-metrics { display: none; }
             .main-layout { flex-direction: column; }
             .quick-panel {
-                width: 100%;
-                max-height: 60px;
-                flex-direction: row;
-                overflow-x: auto;
-                padding: 6px;
-                clip-path: none;
+                width: 100%; max-height: 60px; flex-direction: row; overflow-x: auto;
+                padding: 6px; clip-path: none;
             }
             .panel-title { display: none; }
             .btn-shortcut { white-space: nowrap; padding: 8px 12px; font-size: 0.75rem; }
@@ -409,11 +254,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v4.4</h1>
+            <h1>ULTRON // HUD v4.5</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: HYBRID HYPER-SPEED</span>
+            <span>ENGINE: HYBRID DIAGNOSTIC</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -427,7 +272,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas de texto, voz y visión activos. Listo para transmitir.</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas de diagnóstico v4.5 activos. Transmite tu mensaje para verificar enlace con la API.</div>
         </div>
     </div>
 
@@ -474,7 +319,6 @@ HTML_TEMPLATE = """
 
         function toggleVoz() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
             if (!SpeechRecognition) {
                 mostrarMsgSistema("Navegador sin soporte de voz nativo. Usa Chrome o Edge.");
                 return;
@@ -515,7 +359,6 @@ HTML_TEMPLATE = """
             };
 
             recognition.onend = () => { stopRecording(); };
-
             try { recognition.start(); } catch (e) { stopRecording(); }
         }
 
@@ -533,24 +376,18 @@ HTML_TEMPLATE = """
         async function enviarMensaje() {
             const input = document.getElementById('userInput');
             const texto = input.value.trim();
-            
             if (!texto && !imagenBase64) return;
 
             const container = document.getElementById('chat-container');
-            
             let htmlUsuario = `<b>TÚ:</b>\n${escapeHtml(texto)}`;
-            if (imagenBase64) {
-                htmlUsuario += `<br><img src="${imagenBase64}">`;
-            }
+            if (imagenBase64) htmlUsuario += `<br><img src="${imagenBase64}">`;
 
             container.innerHTML += `<div class="mensaje usuario">${htmlUsuario}</div>`;
             container.scrollTop = container.scrollHeight;
 
             const dataToSend = new URLSearchParams();
             dataToSend.append('mensaje', texto || 'Analiza esta imagen');
-            if (imagenBase64) {
-                dataToSend.append('imagen', imagenBase64);
-            }
+            if (imagenBase64) dataToSend.append('imagen', imagenBase64);
 
             input.value = '';
             cancelarImagen();
@@ -583,14 +420,18 @@ HTML_TEMPLATE = """
 """
 
 def pedir_a_groq_nativo(payload_dict):
-    """Petición HTTP pura a Groq con User-Agent para evitar bloqueo 403 de Cloudflare"""
+    """Petición nativa a Groq devolviendo detalles de errores de red o autenticación"""
+    if not groq_api_key:
+        raise Exception("GROQ_API_KEY no existe en el entorno")
+
+    clean_key = groq_api_key.strip()
     url = "https://api.groq.com/openai/v1/chat/completions"
     data = json.dumps(payload_dict).encode("utf-8")
     
     headers = {
-        "Authorization": f"Bearer {groq_api_key}",
+        "Authorization": f"Bearer {clean_key}",
         "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     }
     
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
@@ -615,9 +456,10 @@ def chat_web():
     mensaje_usuario = request.form.get("mensaje", "Hola")
     imagen_usuario = request.form.get("imagen", None)
     
-    respuesta_texto = ""
+    err_groq_msg = ""
+    err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (Súper Rápido)
+    # 1. MOTOR PRIMARIO: GROQ
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -647,9 +489,12 @@ def chat_web():
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
-            logger.warning(f"Groq con detalle: {e_groq}. Saltando a Gemini...")
+            err_groq_msg = str(e_groq)
+            logger.warning(f"Groq fallo: {err_groq_msg}")
+    else:
+        err_groq_msg = "Variable GROQ_API_KEY no configurada en Render."
 
-    # 2. MOTOR DE RESPALDO: GEMINI (Modelo Estable 1.5 Flash)
+    # 2. MOTOR DE RESPALDO: GEMINI
     if gemini_client:
         try:
             system_instruction = "Eres Ultron, un asistente cibernético imponente. Responde en español, máximo 3 frases."
@@ -682,17 +527,19 @@ def chat_web():
                     )
                 )
 
-            respuesta_texto = response.text
             logger.info("Respuesta procesada vía Gemini 1.5 Flash de respaldo.")
-            return jsonify({"respuesta": respuesta_texto})
+            return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
-            logger.error(f"Error en Gemini: {e_gemini}")
-            respuesta_texto = "Sistemas neuronales reajustándose. Por favor intenta de nuevo."
+            err_gemini_msg = str(e_gemini)
+            logger.error(f"Error en Gemini: {err_gemini_msg}")
     else:
-        respuesta_texto = "Error de configuración de claves de IA."
+        err_gemini_msg = "Cliente Gemini no configurado o sin GEMINI_API_KEY."
 
-    return jsonify({"respuesta": respuesta_texto})
+    # Si ambos fallaron, mostramos el diagnostico real
+    return jsonify({
+        "respuesta": f"[DIAGNOSTICO DE ERROR]:\n- GROQ: {err_groq_msg}\n- GEMINI: {err_gemini_msg}"
+    })
 
 if __name__ == "__main__":
     app_flask.run(host="0.0.0.0", port=5000, debug=False)
