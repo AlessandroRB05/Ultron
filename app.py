@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v5.4 — STABLE LLAMA 70B & ADVANCED PERSONALITY
+# ULTRON WEB HUD v5.5 — BULLETPROOF STABLE ENGINE
 # ==============================================================================
 
 import os
@@ -263,11 +263,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v5.4</h1>
+            <h1>ULTRON // HUD v5.5</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: LLAMA 3 70B</span>
+            <span>ENGINE: HYBRID STABLE</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -281,7 +281,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.4 activos. Conectado con Llama 3 70B. ¡Listo para ayudarte a hacer crecer este imperio y salir de pobres!</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.5 activos. Enlace neuronal estable establecido. ¡Listo para ayudarte!</div>
         </div>
     </div>
 
@@ -462,7 +462,7 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (USANDO EL MODELO CLÁSICO ESTABLE llama3-70b-8192)
+    # 1. MOTOR PRIMARIO: GROQ (USANDO EL MODELO ESTABLE llama-3.1-8b-instant)
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -479,7 +479,7 @@ def chat_web():
                 }
             else:
                 payload = {
-                    "model": "llama3-70b-8192",
+                    "model": "llama-3.1-8b-instant",
                     "messages": [
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": mensaje_usuario}
@@ -488,7 +488,7 @@ def chat_web():
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta procesada vía Groq Llama 3 70B.")
+            logger.info("Respuesta procesada vía Groq.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
@@ -497,7 +497,7 @@ def chat_web():
     else:
         err_groq_msg = "Variable GROQ_API_KEY no configurada."
 
-    # 2. MOTOR DE RESPALDO: GEMINI 1.5 FLASH
+    # 2. MOTOR DE RESPALDO: GEMINI (USANDO gemini-1.5-flash)
     if gemini_client:
         try:
             if imagen_usuario and "," in imagen_usuario:
@@ -528,7 +528,7 @@ def chat_web():
                     )
                 )
 
-            logger.info("Respuesta procesada vía Gemini 1.5 Flash.")
+            logger.info("Respuesta procesada vía Gemini de respaldo.")
             return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
