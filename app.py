@@ -412,7 +412,7 @@ HTML_TEMPLATE = """
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: HYBRID MULTIMODAL</span>
+            <span>ENGINE: HYBRID GROQ/GEMINI</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -426,7 +426,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas de texto, voz y visión multimodales en línea. Adjunta una imagen o escribe para comenzar.</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas de texto, voz y visión activos vía Groq Llama 3. ¿En qué puedo ayudarte?</div>
         </div>
     </div>
 
@@ -508,7 +508,7 @@ HTML_TEMPLATE = """
                 console.error("Error de micrófono:", event.error);
                 stopRecording();
                 if (event.error === 'not-allowed') {
-                    mostrarMsgSistema("Permiso bloqueado. Haz clic en el candado 🔒 al lado de la URL para habilitar el micrófono.");
+                    mostrarMsgSistema("Permiso bloqueado. Habilita el micrófono en la barra de navegación.");
                 } else {
                     mostrarMsgSistema("Estado de voz: " + event.error);
                 }
@@ -553,7 +553,6 @@ HTML_TEMPLATE = """
             }
 
             input.value = '';
-            const imgAux = imagenBase64;
             cancelarImagen();
 
             try {
@@ -584,7 +583,7 @@ HTML_TEMPLATE = """
 """
 
 def consultar_groq_vision(mensaje, img_b64):
-    """Procesa texto e imagen usando Llama-3 Vision en Groq"""
+    """Procesa texto e imagen usando Llama Vision en Groq"""
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {groq_api_key}",
@@ -603,7 +602,7 @@ def consultar_groq_vision(mensaje, img_b64):
         "messages": [
             {
                 "role": "system", 
-                "content": "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. Responde siempre en español, conciso (máximo 3 frases)."
+                "content": "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. Responde en español, máximo 3 frases."
             },
             {"role": "user", "content": content_list}
         ],
@@ -617,7 +616,7 @@ def consultar_groq_vision(mensaje, img_b64):
         raise Exception(f"Groq Vision error {res.status_code}: {res.text}")
 
 def consultar_groq_texto(mensaje):
-    """Procesa texto usando Llama 3.3 en Groq"""
+    """Procesa texto usando Llama 3.3 en Groq (PRIMARIO)"""
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {groq_api_key}",
@@ -628,7 +627,7 @@ def consultar_groq_texto(mensaje):
         "messages": [
             {
                 "role": "system", 
-                "content": "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. Responde siempre en español, conciso (máximo 3 frases)."
+                "content": "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. Responde en español, máximo 3 frases."
             },
             {"role": "user", "content": mensaje}
         ],
@@ -652,24 +651,24 @@ def chat_web():
     
     respuesta_texto = ""
 
-    # 1. Intentar primero con Groq
+    # 1. MOTOR PRIMARIO: GROQ (Velocidad instantánea y sin saturación)
     if groq_api_key:
         try:
             if imagen_usuario:
                 respuesta_texto = consultar_groq_vision(mensaje_usuario, imagen_usuario)
-                logger.info("Respuesta visual procesada vía Groq Llama Vision.")
+                logger.info("Respuesta procesada vía Groq Vision.")
             else:
                 respuesta_texto = consultar_groq_texto(mensaje_usuario)
-                logger.info("Respuesta de texto procesada vía Groq Llama 3.")
+                logger.info("Respuesta procesada vía Groq Llama 3.")
             return jsonify({"respuesta": respuesta_texto})
         except Exception as e_groq:
-            logger.warning(f"Groq no disponible: {e_groq}. Saltando a Gemini...")
+            logger.warning(f"Groq no disponible: {e_groq}. Saltando a Gemini de respaldo...")
 
-    # 2. Respaldo (Fallback) con Gemini
+    # 2. MOTOR DE RESPALDO: GEMINI (Solo si Groq falla o no hay clave)
     if gemini_client:
         try:
             system_instruction = (
-                "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado y conciso. "
+                "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado. "
                 "Responde en español, de forma breve e imponente (máximo 3 oraciones)."
             )
             
@@ -702,13 +701,13 @@ def chat_web():
                 )
 
             respuesta_texto = response.text
-            logger.info("Respuesta procesada vía Gemini 2.5 Flash.")
+            logger.info("Respuesta procesada vía Gemini 2.5 Flash de respaldo.")
             return jsonify({"respuesta": respuesta_texto})
         except Exception as e_gemini:
             logger.error(f"Error también en Gemini: {e_gemini}")
-            respuesta_texto = "Sistemas neuronales saturados. Por favor reintenta en un momento."
+            respuesta_texto = "Sistemas neuronales sobrecargados. Por favor reintenta en un momento."
     else:
-        respuesta_texto = "Error: No hay motores de Inteligencia Artificial activos."
+        respuesta_texto = "Error: No hay motores de Inteligencia Artificial configurados."
 
     return jsonify({"respuesta": respuesta_texto})
 
