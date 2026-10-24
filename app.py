@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.0 — VOZ CON DIAGNÓSTICO DE PERMISOS
+# ULTRON WEB HUD v4.0.1 — CAPTURA DE VOZ ROBUSTA
 # ==============================================================================
 
 import os
@@ -243,7 +243,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron">HUD Web Público de Ultron v4.0 en línea. Presiona 🎤 y concede permiso al micrófono.</div>
+            <div class="mensaje ultron">HUD Web Público de Ultron v4.0 en línea. Presiona 🎤 para dictar por voz.</div>
         </div>
     </div>
 
@@ -257,71 +257,60 @@ HTML_TEMPLATE = """
         let recognition = null;
         let isRecording = false;
 
-        function initVoz() {
+        function toggleVoz() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
             if (!SpeechRecognition) {
-                mostrarSistemaMsg("Tu navegador no soporta voz. Usa Chrome, Edge o Safari.");
-                return null;
+                mostrarSistemaMsg("Este navegador no soporta reconocimiento de voz nativo. Prueba en Chrome, Edge o Safari.");
+                return;
             }
 
-            const rec = new SpeechRecognition();
-            rec.lang = 'es-ES';
-            rec.continuous = false;
-            rec.interimResults = false;
+            if (isRecording) {
+                if (recognition) recognition.stop();
+                stopRecording();
+                return;
+            }
 
-            rec.onstart = () => {
+            // Inicialización limpia directa
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
                 isRecording = true;
                 document.getElementById('micBtn').classList.add('recording');
-                mostrarSistemaMsg("Escuchando... habla ahora.");
+                mostrarSistemaMsg("🎤 Escuchando... habla ahora.");
             };
 
-            rec.onresult = (event) => {
+            recognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 document.getElementById('userInput').value = transcript;
                 stopRecording();
                 enviarMensaje();
             };
 
-            rec.onerror = (event) => {
+            recognition.onerror = (event) => {
                 console.error("Error de voz:", event.error);
                 stopRecording();
                 if (event.error === 'not-allowed') {
-                    mostrarSistemaMsg("Permiso de micrófono denegado. Permite el acceso al micrófono en la barra de tu navegador.");
+                    mostrarSistemaMsg("Permiso bloqueado por el navegador. Toca el candado o ícono al lado de la URL para dar permiso explícito de micrófono a este sitio.");
                 } else if (event.error === 'no-speech') {
-                    mostrarSistemaMsg("No se detectó voz. Intenta presionar 🎤 de nuevo.");
+                    mostrarSistemaMsg("No se escuchó ningún sonido. Inténtalo de nuevo.");
                 } else {
-                    mostrarSistemaMsg("Error de micrófono: " + event.error);
+                    mostrarSistemaMsg("Estado de voz: " + event.error);
                 }
             };
 
-            rec.onend = () => {
+            recognition.onend = () => {
                 stopRecording();
             };
 
-            return rec;
-        }
-
-        async function toggleVoz() {
-            if (!recognition) {
-                recognition = initVoz();
-            }
-
-            if (!recognition) return;
-
-            if (isRecording) {
-                recognition.stop();
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error(e);
                 stopRecording();
-            } else {
-                try {
-                    // Solicitar permiso explícito primero
-                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                        await navigator.mediaDevices.getUserMedia({ audio: true });
-                    }
-                    recognition.start();
-                } catch (e) {
-                    mostrarSistemaMsg("Se requiere permiso de micrófono para usar esta función.");
-                    stopRecording();
-                }
             }
         }
 
