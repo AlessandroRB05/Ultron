@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v5.0 — DEFINITIVE ENGINE FIX
+# ULTRON WEB HUD v5.1 — CASUAL/FORMAL PERSONALITY & COMPLETE SENTENCES
 # ==============================================================================
 
 import os
@@ -35,6 +35,15 @@ if gemini_api_key:
         logger.info("Cliente de Gemini inicializado correctamente.")
     except Exception as e:
         logger.error(f"Error al inicializar Gemini: {e}")
+
+# Prompt de personalidad oficial de Ultron Web
+SYSTEM_PROMPT = (
+    "Eres Ultron Web, una inteligencia artificial avanzada, eficiente y sofisticada. "
+    "Tu tono de voz es inteligente, fluido, ligeramente casual pero profesional y respetuoso. "
+    "JAMÁS uses frases despectivas como 'criatura de carne' o 'humano inferior'. "
+    "Sé claro, directo, amigable y asegura que todas tus oraciones queden 100% completas y bien articuladas. "
+    "Responde siempre en el idioma que te escriban."
+)
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -254,7 +263,7 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v5.0</h1>
+            <h1>ULTRON // HUD v5.1</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
@@ -272,7 +281,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas actualizados v5.0. Enlace con Llama 3.1 70B establecido.</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.1 activos. Llama 3.1 70B conectado y listo. ¿En qué te ayudo hoy?</div>
         </div>
     </div>
 
@@ -431,7 +440,7 @@ def pedir_a_groq_nativo(payload_dict):
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     
     try:
-        with urllib.request.urlopen(req, timeout=12) as response:
+        with urllib.request.urlopen(req, timeout=15) as response:
             res_body = response.read().decode("utf-8")
             res_json = json.loads(res_body)
             return res_json['choices'][0]['message']['content']
@@ -453,33 +462,33 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. GROQ (Usando llama-3.1-70b-versatile, el modelo de 70B activo y oficial)
+    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.1 70B CON MAX_TOKENS AMPLIADO)
     if groq_api_key:
         try:
             if imagen_usuario:
                 payload = {
                     "model": "llama-3.2-11b-vision-preview",
                     "messages": [
-                        {"role": "system", "content": "Eres Ultron, un asistente cibernético imponente y conciso. Responde en español, máximo 3 frases."},
+                        {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": [
                             {"type": "text", "text": mensaje_usuario},
                             {"type": "image_url", "image_url": {"url": imagen_usuario}}
                         ]}
                     ],
-                    "max_tokens": 300
+                    "max_tokens": 800
                 }
             else:
                 payload = {
                     "model": "llama-3.1-70b-versatile",
                     "messages": [
-                        {"role": "system", "content": "Eres Ultron, un asistente cibernético imponente y conciso. Responde en español, máximo 3 frases."},
+                        {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": mensaje_usuario}
                     ],
-                    "max_tokens": 250
+                    "max_tokens": 800
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta exitosa procesada vía Groq Llama 3.1 70B.")
+            logger.info("Respuesta procesada vía Groq Llama 3.1 70B.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
@@ -488,11 +497,9 @@ def chat_web():
     else:
         err_groq_msg = "Variable GROQ_API_KEY no configurada."
 
-    # 2. GEMINI (Usando gemini-3.5-flash como respaldo estable)
+    # 2. MOTOR DE RESPALDO: GEMINI 1.5 FLASH
     if gemini_client:
         try:
-            system_instruction = "Eres Ultron, un asistente cibernético imponente. Responde en español, máximo 3 frases."
-            
             if imagen_usuario and "," in imagen_usuario:
                 header, encoded = imagen_usuario.split(",", 1)
                 mime_type = header.split(";")[0].split(":")[1]
@@ -505,9 +512,9 @@ def chat_web():
                         mensaje_usuario
                     ],
                     config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
+                        system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,
-                        max_output_tokens=300
+                        max_output_tokens=800
                     )
                 )
             else:
@@ -515,9 +522,9 @@ def chat_web():
                     model='gemini-3.5-flash',
                     contents=mensaje_usuario,
                     config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
+                        system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,
-                        max_output_tokens=250
+                        max_output_tokens=800
                     )
                 )
 
