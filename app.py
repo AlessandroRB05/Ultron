@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.0 — VOZ Y RESPUESTAS OPTIMIZADAS
+# ULTRON WEB HUD v4.0 — VOZ CON DIAGNÓSTICO DE PERMISOS
 # ==============================================================================
 
 import os
@@ -243,7 +243,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron">HUD Web Público de Ultron v4.0 en línea. Reconocimiento de voz listo. ¿En qué puedo ayudarte?</div>
+            <div class="mensaje ultron">HUD Web Público de Ultron v4.0 en línea. Presiona 🎤 y concede permiso al micrófono.</div>
         </div>
     </div>
 
@@ -257,47 +257,70 @@ HTML_TEMPLATE = """
         let recognition = null;
         let isRecording = false;
 
-        // Configuración de reconocimiento de voz del navegador
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        function initVoz() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'es-ES';
-            recognition.continuous = false;
-            recognition.interimResults = false;
+            if (!SpeechRecognition) {
+                mostrarSistemaMsg("Tu navegador no soporta voz. Usa Chrome, Edge o Safari.");
+                return null;
+            }
 
-            recognition.onresult = (event) => {
+            const rec = new SpeechRecognition();
+            rec.lang = 'es-ES';
+            rec.continuous = false;
+            rec.interimResults = false;
+
+            rec.onstart = () => {
+                isRecording = true;
+                document.getElementById('micBtn').classList.add('recording');
+                mostrarSistemaMsg("Escuchando... habla ahora.");
+            };
+
+            rec.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
                 document.getElementById('userInput').value = transcript;
                 stopRecording();
                 enviarMensaje();
             };
 
-            recognition.onerror = (event) => {
+            rec.onerror = (event) => {
                 console.error("Error de voz:", event.error);
                 stopRecording();
+                if (event.error === 'not-allowed') {
+                    mostrarSistemaMsg("Permiso de micrófono denegado. Permite el acceso al micrófono en la barra de tu navegador.");
+                } else if (event.error === 'no-speech') {
+                    mostrarSistemaMsg("No se detectó voz. Intenta presionar 🎤 de nuevo.");
+                } else {
+                    mostrarSistemaMsg("Error de micrófono: " + event.error);
+                }
             };
 
-            recognition.onend = () => {
+            rec.onend = () => {
                 stopRecording();
             };
+
+            return rec;
         }
 
-        function toggleVoz() {
+        async function toggleVoz() {
             if (!recognition) {
-                alert("Tu navegador o dispositivo no soporta reconocimiento de voz nativo.");
-                return;
+                recognition = initVoz();
             }
+
+            if (!recognition) return;
 
             if (isRecording) {
                 recognition.stop();
                 stopRecording();
             } else {
                 try {
+                    // Solicitar permiso explícito primero
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        await navigator.mediaDevices.getUserMedia({ audio: true });
+                    }
                     recognition.start();
-                    isRecording = true;
-                    document.getElementById('micBtn').classList.add('recording');
                 } catch (e) {
-                    console.error(e);
+                    mostrarSistemaMsg("Se requiere permiso de micrófono para usar esta función.");
+                    stopRecording();
                 }
             }
         }
@@ -305,6 +328,12 @@ HTML_TEMPLATE = """
         function stopRecording() {
             isRecording = false;
             document.getElementById('micBtn').classList.remove('recording');
+        }
+
+        function mostrarSistemaMsg(texto) {
+            const container = document.getElementById('chat-container');
+            container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-cyan);"><b>[SISTEMA]:</b> ${texto}</div>`;
+            container.scrollTop = container.scrollHeight;
         }
 
         async function enviarMensaje() {
