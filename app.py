@@ -1,12 +1,14 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.2 — HYBRID ENGINE & MULTIMODAL VISION SYSTEM
+# ULTRON WEB HUD v4.3 — HYBRID ENGINE WITH DETAILED DIAGNOSTICS
 # ==============================================================================
 
 import os
 import sys
 import base64
 import logging
-import requests
+import json
+import urllib.request
+import urllib.error
 from flask import Flask, render_template_string, request, jsonify
 
 # SDK oficial de Google GenAI
@@ -30,12 +32,14 @@ gemini_client = None
 if gemini_api_key:
     try:
         gemini_client = genai.Client(api_key=gemini_api_key)
-        logger.info("Cliente de Gemini inicializado correctamente.")
+        logger.info("Cliente de Gemini inicializado.")
     except Exception as e:
         logger.error(f"Error al inicializar Gemini: {e}")
 
 if groq_api_key:
-    logger.info("GROQ_API_KEY lista para operaciones ultrarrápidas.")
+    logger.info("GROQ_API_KEY detectada en el entorno.")
+else:
+    logger.warning("ALERTA: GROQ_API_KEY no se encuentra configurada en Environment Variables.")
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -272,7 +276,6 @@ HTML_TEMPLATE = """
             box-shadow: var(--red-glow);
         }
 
-        /* PREVISUALIZACIÓN DE IMAGEN ADJUNTADA */
         #image-preview-container {
             display: none;
             align-items: center;
@@ -408,11 +411,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v4.2</h1>
+            <h1>ULTRON // HUD v4.3</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: HYBRID GROQ/GEMINI</span>
+            <span>ENGINE: HYBRID DIAGNOSTIC</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -426,11 +429,10 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas de texto, voz y visión activos vía Groq Llama 3. ¿En qué puedo ayudarte?</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas de texto, voz y visión activos. Probando enlace con Groq...</div>
         </div>
     </div>
 
-    <!-- PREVISUALIZACIÓN DE FOTO ADJUNTADA -->
     <div id="image-preview-container">
         <img id="img-preview" src="" alt="Vista previa">
         <span id="img-name" style="font-size:0.8rem; color:var(--neon-cyan);">Imagen adjuntada</span>
@@ -476,7 +478,7 @@ HTML_TEMPLATE = """
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             
             if (!SpeechRecognition) {
-                mostrarMsgSistema("Navegador sin soporte de voz nativo. Utiliza Chrome, Edge o Safari.");
+                mostrarMsgSistema("Navegador sin soporte de voz nativo. Usa Chrome o Edge.");
                 return;
             }
 
@@ -508,7 +510,7 @@ HTML_TEMPLATE = """
                 console.error("Error de micrófono:", event.error);
                 stopRecording();
                 if (event.error === 'not-allowed') {
-                    mostrarMsgSistema("Permiso bloqueado. Habilita el micrófono en la barra de navegación.");
+                    mostrarMsgSistema("Permiso bloqueado. Habilita el micrófono en tu navegador.");
                 } else {
                     mostrarMsgSistema("Estado de voz: " + event.error);
                 }
@@ -582,63 +584,31 @@ HTML_TEMPLATE = """
 </html>
 """
 
-def consultar_groq_vision(mensaje, img_b64):
-    """Procesa texto e imagen usando Llama Vision en Groq"""
+def pedir_a_groq_nativo(payload_dict):
+    """Realiza la petición HTTP pura a Groq usando urllib nativo de Python"""
     url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {groq_api_key}",
-        "Content-Type": "application/json"
-    }
-
-    content_list = [{"type": "text", "text": mensaje}]
-    if img_b64:
-        content_list.append({
-            "type": "image_url",
-            "image_url": {"url": img_b64}
-        })
-
-    payload = {
-        "model": "llama-3.2-11b-vision-preview",
-        "messages": [
-            {
-                "role": "system", 
-                "content": "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. Responde en español, máximo 3 frases."
-            },
-            {"role": "user", "content": content_list}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 300
-    }
-    res = requests.post(url, json=payload, headers=headers, timeout=12)
-    if res.status_code == 200:
-        return res.json()['choices'][0]['message']['content']
-    else:
-        raise Exception(f"Groq Vision error {res.status_code}: {res.text}")
-
-def consultar_groq_texto(mensaje):
-    """Procesa texto usando Llama 3.3 en Groq (PRIMARIO)"""
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {groq_api_key}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "llama-3.3-70b-versatile",
-        "messages": [
-            {
-                "role": "system", 
-                "content": "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. Responde en español, máximo 3 frases."
-            },
-            {"role": "user", "content": mensaje}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 250
-    }
-    res = requests.post(url, json=payload, headers=headers, timeout=8)
-    if res.status_code == 200:
-        return res.json()['choices'][0]['message']['content']
-    else:
-        raise Exception(f"Groq Texto error {res.status_code}: {res.text}")
+    data = json.dumps(payload_dict).encode("utf-8")
+    
+    req = urllib.request.Request(
+        url, 
+        data=data, 
+        headers={
+            "Authorization": f"Bearer {groq_api_key}",
+            "Content-Type": "application/json"
+        },
+        method="POST"
+    )
+    
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_body = response.read().decode("utf-8")
+            res_json = json.loads(res_body)
+            return res_json['choices'][0]['message']['content']
+    except urllib.error.HTTPError as e:
+        error_text = e.read().decode("utf-8")
+        raise Exception(f"HTTP {e.code}: {error_text}")
+    except Exception as e:
+        raise Exception(f"Error de red Groq: {e}")
 
 @app_flask.route("/")
 def index_web():
@@ -651,26 +621,45 @@ def chat_web():
     
     respuesta_texto = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (Velocidad instantánea y sin saturación)
+    # 1. MOTOR PRIMARIO: GROQ (Petición Nativa Ultra-Robusta)
     if groq_api_key:
         try:
             if imagen_usuario:
-                respuesta_texto = consultar_groq_vision(mensaje_usuario, imagen_usuario)
-                logger.info("Respuesta procesada vía Groq Vision.")
+                payload = {
+                    "model": "llama-3.2-11b-vision-preview",
+                    "messages": [
+                        {"role": "system", "content": "Eres Ultron, un asistente cibernético imponente y conciso. Responde en español, máximo 3 frases."},
+                        {"role": "user", "content": [
+                            {"type": "text", "text": mensaje_usuario},
+                            {"type": "image_url", "image_url": {"url": imagen_usuario}}
+                        ]}
+                    ],
+                    "max_tokens": 300
+                }
             else:
-                respuesta_texto = consultar_groq_texto(mensaje_usuario)
-                logger.info("Respuesta procesada vía Groq Llama 3.")
-            return jsonify({"respuesta": respuesta_texto})
-        except Exception as e_groq:
-            logger.warning(f"Groq no disponible: {e_groq}. Saltando a Gemini de respaldo...")
+                payload = {
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": "Eres Ultron, un asistente cibernético imponente y conciso. Responde en español, máximo 3 frases."},
+                        {"role": "user", "content": mensaje_usuario}
+                    ],
+                    "max_tokens": 250
+                }
 
-    # 2. MOTOR DE RESPALDO: GEMINI (Solo si Groq falla o no hay clave)
+            respuesta_texto = pedir_a_groq_nativo(payload)
+            logger.info("Respuesta exitosa generada vía Groq.")
+            return jsonify({"respuesta": respuesta_texto})
+            
+        except Exception as e_groq:
+            logger.warning(f"Groq fallo con detalle: {e_groq}")
+            # Si Gemini no esta disponible, informamos el error real de Groq
+            if not gemini_client:
+                return jsonify({"respuesta": f"Error en Groq: {e_groq}"})
+
+    # 2. MOTOR DE RESPALDO: GEMINI
     if gemini_client:
         try:
-            system_instruction = (
-                "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado. "
-                "Responde en español, de forma breve e imponente (máximo 3 oraciones)."
-            )
+            system_instruction = "Eres Ultron, un asistente cibernético imponente. Responde en español, máximo 3 frases."
             
             if imagen_usuario and "," in imagen_usuario:
                 header, encoded = imagen_usuario.split(",", 1)
@@ -703,13 +692,13 @@ def chat_web():
             respuesta_texto = response.text
             logger.info("Respuesta procesada vía Gemini 2.5 Flash de respaldo.")
             return jsonify({"respuesta": respuesta_texto})
+            
         except Exception as e_gemini:
-            logger.error(f"Error también en Gemini: {e_gemini}")
-            respuesta_texto = "Sistemas neuronales sobrecargados. Por favor reintenta en un momento."
-    else:
-        respuesta_texto = "Error: No hay motores de Inteligencia Artificial configurados."
+            logger.error(f"Error en Gemini: {e_gemini}")
+            # Si fallo Groq y fallo Gemini, mostramos por qué falló Groq
+            return jsonify({"respuesta": "Atención: Groq y Gemini no respondieron. Revisa la GROQ_API_KEY en Render."})
 
-    return jsonify({"respuesta": respuesta_texto})
+    return jsonify({"respuesta": "Error: GROQ_API_KEY no detectada. Agrégala en Environment Variables en Render."})
 
 if __name__ == "__main__":
     app_flask.run(host="0.0.0.0", port=5000, debug=False)
