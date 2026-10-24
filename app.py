@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.7 — HIGH-PERFORMANCE LLAMA 3.3 ENGINE
+# ULTRON WEB HUD v4.8 — DEFINITIVE FIXED MODEL IDS
 # ==============================================================================
 
 import os
@@ -11,7 +11,6 @@ import urllib.request
 import urllib.error
 from flask import Flask, render_template_string, request, jsonify
 
-# SDK oficial de Google GenAI
 from google import genai
 from google.genai import types
 
@@ -24,7 +23,6 @@ logger = logging.getLogger("UltronWebHUD")
 
 app_flask = Flask(__name__)
 
-# Configuración de Llaves de API
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 groq_api_key = os.getenv("GROQ_API_KEY")
 
@@ -254,11 +252,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v4.7</h1>
+            <h1>ULTRON // HUD v4.8</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: LLAMA 3.3 70B</span>
+            <span>ENGINE: LLAMA-3 70B</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -272,7 +270,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nMotor Llama 3.3 70B activo. Sistemas de texto, voz y visión preparados.</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas online. Motor Llama 3 70B listo para procesamiento.</div>
         </div>
     </div>
 
@@ -320,7 +318,7 @@ HTML_TEMPLATE = """
         function toggleVoz() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                mostrarMsgSistema("Navegador sin soporte de voz nativo. Usa Chrome o Edge.");
+                mostrarMsgSistema("Navegador sin soporte de voz nativo.");
                 return;
             }
 
@@ -349,13 +347,8 @@ HTML_TEMPLATE = """
             };
 
             recognition.onerror = (event) => {
-                console.error("Error de micrófono:", event.error);
                 stopRecording();
-                if (event.error === 'not-allowed') {
-                    mostrarMsgSistema("Permiso bloqueado. Habilita el micrófono en tu navegador.");
-                } else {
-                    mostrarMsgSistema("Estado de voz: " + event.error);
-                }
+                mostrarMsgSistema("Estado de voz: " + event.error);
             };
 
             recognition.onend = () => { stopRecording(); };
@@ -420,7 +413,6 @@ HTML_TEMPLATE = """
 """
 
 def pedir_a_groq_nativo(payload_dict):
-    """Petición nativa a Groq con Llama 3.3 70B"""
     if not groq_api_key:
         raise Exception("GROQ_API_KEY no existe en el entorno")
 
@@ -459,7 +451,7 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.3 70B)
+    # 1. GROQ (Modelo exacto de producción de 70B en Groq)
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -476,7 +468,7 @@ def chat_web():
                 }
             else:
                 payload = {
-                    "model": "llama-3.3-70b-versatile",
+                    "model": "llama3-70b-8192",
                     "messages": [
                         {"role": "system", "content": "Eres Ultron, un asistente cibernético imponente y conciso. Responde en español, máximo 3 frases."},
                         {"role": "user", "content": mensaje_usuario}
@@ -485,7 +477,7 @@ def chat_web():
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta exitosa procesada vía Groq Llama 3.3 70B.")
+            logger.info("Respuesta exitosa procesada vía Groq Llama 3 70B.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
@@ -494,7 +486,7 @@ def chat_web():
     else:
         err_groq_msg = "Variable GROQ_API_KEY no configurada."
 
-    # 2. MOTOR DE RESPALDO: GEMINI
+    # 2. GEMINI (Modelo v2.0 Flash)
     if gemini_client:
         try:
             system_instruction = "Eres Ultron, un asistente cibernético imponente. Responde en español, máximo 3 frases."
@@ -505,7 +497,7 @@ def chat_web():
                 image_bytes = base64.b64decode(encoded)
 
                 response = gemini_client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='gemini-2.0-flash',
                     contents=[
                         types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                         mensaje_usuario
@@ -518,7 +510,7 @@ def chat_web():
                 )
             else:
                 response = gemini_client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='gemini-2.0-flash',
                     contents=mensaje_usuario,
                     config=types.GenerateContentConfig(
                         system_instruction=system_instruction,
@@ -527,7 +519,7 @@ def chat_web():
                     )
                 )
 
-            logger.info("Respuesta procesada vía Gemini de respaldo.")
+            logger.info("Respuesta procesada vía Gemini 2.0 Flash.")
             return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
