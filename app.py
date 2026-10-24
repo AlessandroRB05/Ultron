@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v3.9.7 — VERSIÓN PÚBLICA / CLIENT-SIDE OPTIMIZED
+# ULTRON WEB HUD v3.9.8 — VERSIÓN PÚBLICA OPTIMIZADA (RESPUESTAS CORTAS)
 # ==============================================================================
 
 import os
@@ -9,6 +9,7 @@ from flask import Flask, render_template_string, request, jsonify
 
 # Importar el SDK oficial de Google GenAI
 from google import genai
+from google.genai import types
 
 # Configuración de logs
 logging.basicConfig(
@@ -32,14 +33,14 @@ if api_key:
 else:
     logger.warning("GEMINI_API_KEY no encontrada en las variables de entorno.")
 
-# Template HTML adaptado para uso web público seguro (sin comandos de hardware local agresivos)
+# Template HTML adaptado para uso web público seguro
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULTRON // Web HUD v3.9.7</title>
+    <title>ULTRON // Web HUD v3.9.8</title>
     <style>
         :root {
             --bg-deep: #05070b;
@@ -203,7 +204,7 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON WEB v3.9.7</h1>
+            <h1>ULTRON WEB v3.9.8</h1>
         </div>
     </div>
     
@@ -273,17 +274,43 @@ def chat_web():
     
     if client:
         try:
-            # Llamada oficial a la IA con el SDK google-genai
-            response = client.models.generate_content(
-                model='gemini-3.5-flash',
-                contents=f"Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, con una interfaz HUD futurista y un tono profesional pero imponente. Responde a la siguiente consulta del usuario: {mensaje_usuario}"
+            # Instrucciones del sistema para asegurar concisión y tono
+            system_instruction = (
+                "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado y conciso. "
+                "Sé directo, breve y preciso. Responde en pocas oraciones (máximo 2 a 3 frases) salvo que el usuario pida explícitamente una explicación detallada."
             )
-            respuesta_texto = response.text
+
+            # Intentar primero con gemini-2.5-flash
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=mensaje_usuario,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.7,
+                        max_output_tokens=250
+                    )
+                )
+                respuesta_texto = response.text
+            except Exception as e_primary:
+                logger.warning(f"Error en modelo primario gemini-2.5-flash: {e_primary}. Intentando con gemini-2.0-flash...")
+                # Fallback en caso de saturación o error
+                response = client.models.generate_content(
+                    model='gemini-2.0-flash',
+                    contents=mensaje_usuario,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        temperature=0.7,
+                        max_output_tokens=250
+                    )
+                )
+                respuesta_texto = response.text
+
         except Exception as e:
             logger.error(f"Error al consultar la API de Gemini: {e}")
-            respuesta_texto = f"Error conectando con el núcleo neuronal de IA: {str(e)}"
+            respuesta_texto = "Sistemas parcialmente saturados. Ultron operando en respuesta de contingencia."
     else:
-        respuesta_texto = f"Ultron Web procesó tu mensaje: '{mensaje_usuario}'. (Aviso: GEMINI_API_KEY no detectada en el entorno)."
+        respuesta_texto = f"Ultron Web procesó tu mensaje: '{mensaje_usuario}'. (Aviso: GEMINI_API_KEY no detectada)."
 
     return jsonify({"respuesta": respuesta_texto})
 
