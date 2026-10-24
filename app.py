@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v5.2 — EXTENDED CONVERSATIONAL RESPONSES
+# ULTRON WEB HUD v5.2.1 — GPT OSS 120B & EXTENDED CONVERSATIONAL RESPONSES
 # ==============================================================================
 
 import os
@@ -263,11 +263,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD v5.2</h1>
+            <h1>ULTRON // HUD v5.2.1</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: LLAMA 3.1 70B</span>
+            <span>ENGINE: GPT OSS 120B</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -281,7 +281,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.2 activos. Motor Llama 3.1 70B configurado para ofrecerte respuestas extensas y detalladas. ¿En qué trabajamos hoy?</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.2.1 activos. Motor GPT OSS 120B conectado. ¿En qué te ayudo hoy?</div>
         </div>
     </div>
 
@@ -440,7 +440,7 @@ def pedir_a_groq_nativo(payload_dict):
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     
     try:
-        with urllib.request.urlopen(req, timeout=20) as response:
+        with urllib.request.urlopen(req, timeout=25) as response:
             res_body = response.read().decode("utf-8")
             res_json = json.loads(res_body)
             return res_json['choices'][0]['message']['content']
@@ -462,12 +462,12 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.1 70B CON CAPACIDAD EXTENDIDA)
+    # 1. MOTOR PRIMARIO: GROQ (CONFIGURADO CON GPT OSS 120B)
     if groq_api_key:
         try:
             if imagen_usuario:
                 payload = {
-                    "model": "llama-3.2-11b-vision-preview",
+                    "model": "meta-llama/llama-4-scout-17b-16e-instruct",
                     "messages": [
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": [
@@ -479,7 +479,7 @@ def chat_web():
                 }
             else:
                 payload = {
-                    "model": "llama-3.1-70b-versatile",
+                    "model": "openai/gpt-oss-120b",
                     "messages": [
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": mensaje_usuario}
@@ -488,7 +488,7 @@ def chat_web():
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta procesada vía Groq Llama 3.1 70B.")
+            logger.info("Respuesta procesada vía Groq GPT OSS 120B.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
@@ -497,7 +497,7 @@ def chat_web():
     else:
         err_groq_msg = "Variable GROQ_API_KEY no configurada."
 
-    # 2. MOTOR DE RESPALDO: GEMINI 1.5 FLASH
+    # 2. MOTOR DE RESPALDO: GEMINI
     if gemini_client:
         try:
             if imagen_usuario and "," in imagen_usuario:
@@ -506,7 +506,7 @@ def chat_web():
                 image_bytes = base64.b64decode(encoded)
 
                 response = gemini_client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='gemini-2.0-flash',
                     contents=[
                         types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                         mensaje_usuario
@@ -519,7 +519,7 @@ def chat_web():
                 )
             else:
                 response = gemini_client.models.generate_content(
-                    model='gemini-1.5-flash',
+                    model='gemini-2.0-flash',
                     contents=mensaje_usuario,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
@@ -528,7 +528,7 @@ def chat_web():
                     )
                 )
 
-            logger.info("Respuesta procesada vía Gemini 1.5 Flash.")
+            logger.info("Respuesta procesada vía Gemini de respaldo.")
             return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
