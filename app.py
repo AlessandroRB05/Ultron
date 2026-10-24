@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.0 — INTERFAZ FUTURISTA & MOBILE RESPONSIVE
+# ULTRON WEB HUD v4.0.0 — ADVANCED SCI-FI HUD INTERFACE
 # ==============================================================================
 
 import os
@@ -36,17 +36,19 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ULTRON // ADVANCED HUD v4.0</title>
+    <title>ULTRON // ADVANCED HUD SYSTEM</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
         :root {
-            --bg-deep: #030508;
-            --panel-bg: rgba(8, 14, 24, 0.88);
-            --neon-cyan: #00f0ff;
-            --neon-red: #ff003c;
-            --neon-amber: #ffb400;
-            --text-main: #d0e4ff;
-            --border-glow: 0 0 12px rgba(0, 240, 255, 0.35);
-            --border-red-glow: 0 0 12px rgba(255, 0, 60, 0.4);
+            --bg-deep: #02060d;
+            --panel-bg: rgba(6, 15, 28, 0.75);
+            --neon-cyan: #00f3ff;
+            --neon-red: #ff0055;
+            --neon-amber: #ffaa00;
+            --glass-border: rgba(0, 243, 255, 0.4);
+            --text-glow: 0 0 8px rgba(0, 243, 255, 0.8);
+            --red-glow: 0 0 12px rgba(255, 0, 85, 0.8);
         }
 
         * {
@@ -56,272 +58,281 @@ HTML_TEMPLATE = """
 
         body {
             background-color: var(--bg-deep);
-            color: var(--text-main);
-            font-family: 'Courier New', Consolas, monospace;
+            color: #d1f7ff;
+            font-family: 'Share Tech Mono', monospace;
             margin: 0;
-            padding: 10px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
             background-image: 
-                linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
-            background-size: 24px 24px;
+                radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.05) 0%, transparent 80%),
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
         }
 
-        /* BARRA SUPERIOR */
+        /* EFECTO SCANLINE CRT FUTURISTA */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* HEADER / BARRA DE NAVEGACIÓN FUTURISTA */
         .header-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: var(--panel-bg);
-            border: 1px solid var(--neon-cyan);
-            box-shadow: var(--border-glow);
-            padding: 10px 18px;
-            margin-bottom: 10px;
-            border-radius: 4px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2), inset 0 0 15px rgba(0, 243, 255, 0.1);
+            backdrop-filter: blur(8px);
+            padding: 10px 20px;
+            margin-bottom: 12px;
             clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
         }
 
         .brand-area {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
         }
 
         .reactor-core {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border: 2px solid var(--neon-cyan);
             border-radius: 50%;
             box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 8px var(--neon-cyan);
-            animation: pulse-core 2s infinite alternate;
+            animation: pulse-core 1.5s infinite alternate ease-in-out;
+            position: relative;
+        }
+
+        .reactor-core::after {
+            content: '';
+            position: absolute;
+            top: 3px; left: 3px; right: 3px; bottom: 3px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--neon-cyan);
         }
 
         @keyframes pulse-core {
-            0% { transform: scale(0.9); opacity: 0.7; }
-            100% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 16px var(--neon-cyan); }
+            0% { transform: scale(0.85); box-shadow: 0 0 6px var(--neon-cyan); }
+            100% { transform: scale(1.15); box-shadow: 0 0 18px var(--neon-cyan), 0 0 30px var(--neon-cyan); }
         }
 
         h1 {
-            font-size: 1rem;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 900;
             margin: 0;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
             color: #ffffff;
-            text-shadow: 0 0 6px var(--neon-cyan);
+            text-shadow: var(--text-glow);
         }
 
-        .status-badge {
+        .hud-metrics {
+            display: flex;
+            gap: 15px;
             font-size: 0.75rem;
             color: var(--neon-cyan);
-            border: 1px solid var(--neon-cyan);
-            padding: 3px 8px;
-            background: rgba(0, 240, 255, 0.1);
             letter-spacing: 1px;
+        }
+
+        .hud-metrics span {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            padding: 3px 8px;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
         }
 
         /* LAYOUT PRINCIPAL */
         .main-layout {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex: 1;
             overflow: hidden;
         }
 
-        /* PANEL LATERAL DE COMANDOS */
+        /* PANEL LATERAL DE CONTROL */
         .quick-panel {
-            width: 220px;
+            width: 230px;
             background: var(--panel-bg);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            border-radius: 4px;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            overflow-y: auto;
-        }
-
-        .panel-title {
-            font-size: 0.8rem;
-            color: var(--neon-cyan);
-            letter-spacing: 1.5px;
-            margin-bottom: 4px;
-            border-bottom: 1px solid rgba(0, 240, 255, 0.25);
-            padding-bottom: 4px;
-            font-weight: bold;
-        }
-
-        .btn-shortcut {
-            background: rgba(0, 240, 255, 0.05);
-            color: var(--text-main);
-            border: 1px solid rgba(0, 240, 255, 0.25);
-            padding: 10px;
-            text-align: left;
-            font-family: monospace;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-radius: 2px;
-        }
-
-        .btn-shortcut:hover, .btn-shortcut:active {
-            background: rgba(0, 240, 255, 0.2);
-            color: #fff;
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
-        }
-
-        /* CONTENEDOR DEL CHAT */
-        #chat-container {
-            flex: 1;
-            background: var(--panel-bg);
-            border: 1px solid rgba(0, 240, 255, 0.3);
-            border-radius: 4px;
-            overflow-y: auto;
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.1);
+            backdrop-filter: blur(8px);
             padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+            gap: 10px;
+            overflow-y: auto;
+            clip-path: polygon(0 0, 100% 0, 100% 96%, 88% 100%, 0 100%);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 5px;
+            text-shadow: var(--text-glow);
+        }
+
+        .btn-shortcut {
+            background: rgba(0, 243, 255, 0.05);
+            color: #d1f7ff;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            padding: 12px;
+            text-align: left;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            clip-path: polygon(8% 0, 100% 0, 100% 70%, 92% 100%, 0 100%, 0 30%);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-shortcut:hover {
+            background: rgba(0, 243, 255, 0.25);
+            color: #ffffff;
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+            transform: translateX(4px);
+        }
+
+        /* ÁREA DE CHAT TERMINAL */
+        #chat-container {
+            flex: 1;
+            background: var(--panel-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9), 0 0 15px rgba(0, 243, 255, 0.1);
+            backdrop-filter: blur(8px);
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
         }
 
         .mensaje {
-            padding: 10px 14px;
-            border-radius: 3px;
-            max-width: 88%;
-            line-height: 1.4;
+            padding: 12px 18px;
+            max-width: 80%;
+            line-height: 1.5;
             word-break: break-word;
             white-space: pre-wrap;
-            font-size: 0.9rem;
-            animation: fadeIn 0.3s ease-in-out;
+            font-size: 0.95rem;
+            position: relative;
+            animation: slideIn 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .usuario {
-            background: rgba(0, 240, 255, 0.1);
-            color: #9feeff;
+            background: rgba(0, 243, 255, 0.08);
+            color: #a8f5ff;
             align-self: flex-end;
-            border-right: 3px solid var(--neon-cyan);
-            border-top: 1px solid rgba(0, 240, 255, 0.2);
+            border: 1px solid rgba(0, 243, 255, 0.4);
+            border-right: 4px solid var(--neon-cyan);
+            clip-path: polygon(3% 0, 100% 0, 100% 100%, 0 100%, 0 25%);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.15);
         }
 
         .ultron {
-            background: rgba(255, 0, 60, 0.1);
-            color: #ffc2cd;
+            background: rgba(255, 0, 85, 0.08);
+            color: #ffb5c8;
             align-self: flex-start;
-            border-left: 3px solid var(--neon-red);
-            border-top: 1px solid rgba(255, 0, 60, 0.2);
-            box-shadow: var(--border-red-glow);
+            border: 1px solid rgba(255, 0, 85, 0.4);
+            border-left: 4px solid var(--neon-red);
+            clip-path: polygon(0 0, 97% 0, 100% 25%, 100% 100%, 0 100%);
+            box-shadow: var(--red-glow);
         }
 
-        .sistema {
-            background: rgba(255, 180, 0, 0.1);
-            color: var(--neon-amber);
-            align-self: center;
-            border: 1px solid var(--neon-amber);
-            font-size: 0.8rem;
-        }
-
-        /* ENTRADA DE TEXTO Y BOTONES */
+        /* ENTRADA DE MENSAJES */
         .input-area {
             display: flex;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 10px;
+            margin-top: 12px;
             align-items: center;
         }
 
         textarea {
             flex: 1;
             background: var(--panel-bg);
-            border: 1px solid var(--neon-cyan);
+            border: 1px solid var(--glass-border);
             color: #ffffff;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 0.95rem;
-            border-radius: 3px;
+            padding: 14px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1rem;
             resize: none;
-            height: 48px;
+            height: 52px;
             outline: none;
-            box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.15);
+            box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.1);
+            clip-path: polygon(0 0, 98% 0, 100% 30%, 100% 100%, 2% 100%, 0 70%);
+            transition: all 0.3s;
         }
 
         textarea:focus {
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4), inset 0 0 10px rgba(0, 243, 255, 0.2);
         }
 
         button.enviar {
             background: var(--neon-cyan);
             color: var(--bg-deep);
             border: none;
-            padding: 0 20px;
-            height: 48px;
-            font-weight: bold;
-            font-family: monospace;
+            padding: 0 28px;
+            height: 52px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
             cursor: pointer;
-            letter-spacing: 1px;
-            transition: all 0.2s;
-            border-radius: 2px;
+            transition: all 0.3s ease;
+            clip-path: polygon(15% 0, 100% 0, 100% 70%, 85% 100%, 0 100%, 0 30%);
+            box-shadow: 0 0 15px var(--neon-cyan);
         }
 
         button.enviar:hover, button.enviar:active {
-            box-shadow: 0 0 12px var(--neon-cyan);
-            background: #e0ffff;
+            background: #ffffff;
+            box-shadow: 0 0 25px var(--neon-cyan);
+            transform: scale(1.02);
         }
 
-        /* MEDIA QUERIES PARA CELULAR (MOBILE) */
+        /* RESPONSIVO PARA CELULARES */
         @media (max-width: 768px) {
-            body {
-                padding: 6px;
-            }
-
-            .header-bar {
-                padding: 8px 12px;
-                clip-path: none;
-            }
-
-            h1 {
-                font-size: 0.85rem;
-                letter-spacing: 1.5px;
-            }
-
-            .main-layout {
-                flex-direction: column;
-            }
-
+            body { padding: 6px; }
+            .header-bar { clip-path: none; padding: 8px 12px; }
+            .hud-metrics { display: none; }
+            .main-layout { flex-direction: column; }
             .quick-panel {
                 width: 100%;
-                max-height: 70px;
+                max-height: 60px;
                 flex-direction: row;
                 overflow-x: auto;
-                overflow-y: hidden;
                 padding: 6px;
-                align-items: center;
+                clip-path: none;
             }
-
-            .panel-title {
-                display: none;
-            }
-
-            .btn-shortcut {
-                white-space: nowrap;
-                padding: 8px 12px;
-                font-size: 0.75rem;
-            }
-
-            .mensaje {
-                max-width: 95%;
-                font-size: 0.85rem;
-            }
-
-            button.enviar {
-                padding: 0 14px;
-                font-size: 0.85rem;
-            }
+            .panel-title { display: none; }
+            .btn-shortcut { white-space: nowrap; padding: 8px 12px; font-size: 0.75rem; }
+            .mensaje { max-width: 92%; font-size: 0.88rem; }
+            button.enviar { padding: 0 16px; font-size: 0.8rem; }
         }
     </style>
 </head>
@@ -329,27 +340,31 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON WEB v4.0</h1>
+            <h1>ULTRON // HUD v4.0</h1>
         </div>
-        <div class="status-badge">ONLINE // HUD</div>
+        <div class="hud-metrics">
+            <span>CORE: ONLINE</span>
+            <span>AI: GEMINI-FLASH</span>
+            <span>NET: SECURE</span>
+        </div>
     </div>
     
     <div class="main-layout">
         <div class="quick-panel">
-            <div class="panel-title">// CONSULTAS IA</div>
-            <button class="btn-shortcut" onclick="ejecutarComandoWeb('Hola Ultron, preséntate brevemente.')">⚡ Saludo</button>
-            <button class="btn-shortcut" onclick="ejecutarComandoWeb('Cuéntame un chiste técnico corto.')">🃏 Chiste</button>
-            <button class="btn-shortcut" onclick="ejecutarComandoWeb('¿Cuál es tu estado actual de sistemas?')">📊 Estado</button>
+            <div class="panel-title">// COMANDOS</div>
+            <button class="btn-shortcut" onclick="ejecutarComandoWeb('Hola Ultron, preséntate brevemente.')">⚡ SALUDO</button>
+            <button class="btn-shortcut" onclick="ejecutarComandoWeb('Cuéntame un chiste técnico corto.')">🃏 CHISTE</button>
+            <button class="btn-shortcut" onclick="ejecutarComandoWeb('¿Cuál es tu estado de procesamiento?')">📊 DIAGNÓSTICO</button>
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron">HUD Web Avanzado de Ultron en línea. Interfaz futurista lista. ¿En qué puedo ayudarte?</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas neuronales acoplados. HUD de combate activo. ¿Cuáles son tus órdenes?</div>
         </div>
     </div>
 
     <div class="input-area">
-        <textarea id="userInput" placeholder="Escribe tu mensaje a Ultron..." autofocus onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();enviarMensaje();}"></textarea>
-        <button class="enviar" onclick="enviarMensaje()">ENVIAR</button>
+        <textarea id="userInput" placeholder="Ingresa comando de voz o texto..." autofocus onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();enviarMensaje();}"></textarea>
+        <button class="enviar" onclick="enviarMensaje()">TRANSMITIR</button>
     </div>
 
     <script>
@@ -360,7 +375,7 @@ HTML_TEMPLATE = """
             input.value = '';
 
             const container = document.getElementById('chat-container');
-            container.innerHTML += `<div class="mensaje usuario"><b>Tú:</b>\n${escapeHtml(texto)}</div>`;
+            container.innerHTML += `<div class="mensaje usuario"><b>TÚ:</b>\n${escapeHtml(texto)}</div>`;
             container.scrollTop = container.scrollHeight;
 
             try {
@@ -370,10 +385,10 @@ HTML_TEMPLATE = """
                     body: 'mensaje=' + encodeURIComponent(texto)
                 });
                 const data = await response.json();
-                container.innerHTML += `<div class="mensaje ultron"><b>Ultron:</b>\n${escapeHtml(data.respuesta)}</div>`;
+                container.innerHTML += `<div class="mensaje ultron"><b>ULTRON:</b>\n${escapeHtml(data.respuesta)}</div>`;
                 container.scrollTop = container.scrollHeight;
             } catch (error) {
-                container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-red);"><b>Error:</b> Pérdida de enlace con el servidor.</div>`;
+                container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-red);"><b>ERROR:</b> Fallo en enlace cuántico con servidor.</div>`;
             }
         }
 
@@ -401,37 +416,24 @@ def chat_web():
     if client:
         try:
             system_instruction = (
-                "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado y conciso. "
-                "Sé directo, breve y preciso. Responde en pocas oraciones (máximo 2 a 3 frases) salvo que el usuario pida explícitamente una explicación detallada."
+                "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado, imponente y muy conciso. "
+                "Responde con tono profesional, tecnológico e imponente. Mantén tus respuestas breves y directas (máximo 2 a 3 frases)."
             )
 
-            try:
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=mensaje_usuario,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                        temperature=0.7,
-                        max_output_tokens=250
-                    )
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=mensaje_usuario,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    temperature=0.7,
+                    max_output_tokens=300
                 )
-                respuesta_texto = response.text
-            except Exception as e_primary:
-                logger.warning(f"Error en modelo primario gemini-2.5-flash: {e_primary}. Intentando con gemini-2.0-flash...")
-                response = client.models.generate_content(
-                    model='gemini-2.0-flash',
-                    contents=mensaje_usuario,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                        temperature=0.7,
-                        max_output_tokens=250
-                    )
-                )
-                respuesta_texto = response.text
+            )
+            respuesta_texto = response.text
 
         except Exception as e:
             logger.error(f"Error al consultar la API de Gemini: {e}")
-            respuesta_texto = "Sistemas parcialmente saturados. Ultron operando en respuesta de contingencia."
+            respuesta_texto = f"Error en la red neuronal: {str(e)}"
     else:
         respuesta_texto = f"Ultron Web procesó tu mensaje: '{mensaje_usuario}'. (Aviso: GEMINI_API_KEY no detectada)."
 
