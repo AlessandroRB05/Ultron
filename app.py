@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v4.0.1 — CAPTURA DE VOZ ROBUSTA
+# ULTRON WEB HUD v4.0 — INTERFAZ FUTURISTA & MOBILE RESPONSIVE
 # ==============================================================================
 
 import os
@@ -35,32 +35,42 @@ HTML_TEMPLATE = """
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULTRON // Web HUD v4.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ULTRON // ADVANCED HUD v4.0</title>
     <style>
         :root {
-            --bg-deep: #05070b;
-            --panel-bg: rgba(10, 16, 26, 0.85);
+            --bg-deep: #030508;
+            --panel-bg: rgba(8, 14, 24, 0.88);
             --neon-cyan: #00f0ff;
             --neon-red: #ff003c;
-            --text-main: #c0d2e8;
-            --border-glow: 0 0 10px rgba(0, 240, 255, 0.3);
+            --neon-amber: #ffb400;
+            --text-main: #d0e4ff;
+            --border-glow: 0 0 12px rgba(0, 240, 255, 0.35);
+            --border-red-glow: 0 0 12px rgba(255, 0, 60, 0.4);
         }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
         body {
             background-color: var(--bg-deep);
             color: var(--text-main);
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Courier New', Consolas, monospace;
             margin: 0;
-            padding: 15px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            height: 92vh;
-            box-sizing: border-box;
+            height: 100vh;
+            overflow: hidden;
             background-image: 
-                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-            background-size: 20px 20px;
+                linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
         }
+
+        /* BARRA SUPERIOR */
         .header-bar {
             display: flex;
             justify-content: space-between;
@@ -68,110 +78,163 @@ HTML_TEMPLATE = """
             background: var(--panel-bg);
             border: 1px solid var(--neon-cyan);
             box-shadow: var(--border-glow);
-            padding: 12px 20px;
-            margin-bottom: 15px;
+            padding: 10px 18px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
         }
+
         .brand-area {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
+
         .reactor-core {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border: 2px solid var(--neon-cyan);
             border-radius: 50%;
-            position: relative;
-            box-shadow: 0 0 8px var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 8px var(--neon-cyan);
+            animation: pulse-core 2s infinite alternate;
         }
+
+        @keyframes pulse-core {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            100% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 16px var(--neon-cyan); }
+        }
+
         h1 {
-            font-size: 1.1rem;
+            font-size: 1rem;
             margin: 0;
             letter-spacing: 3px;
             color: #ffffff;
-            text-shadow: 0 0 5px var(--neon-cyan);
+            text-shadow: 0 0 6px var(--neon-cyan);
         }
+
+        .status-badge {
+            font-size: 0.75rem;
+            color: var(--neon-cyan);
+            border: 1px solid var(--neon-cyan);
+            padding: 3px 8px;
+            background: rgba(0, 240, 255, 0.1);
+            letter-spacing: 1px;
+        }
+
+        /* LAYOUT PRINCIPAL */
         .main-layout {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             flex: 1;
             overflow: hidden;
         }
+
+        /* PANEL LATERAL DE COMANDOS */
         .quick-panel {
             width: 220px;
             background: var(--panel-bg);
-            border: 1px solid rgba(0, 240, 255, 0.4);
+            border: 1px solid rgba(0, 240, 255, 0.3);
             border-radius: 4px;
-            padding: 15px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             overflow-y: auto;
         }
+
         .panel-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--neon-cyan);
             letter-spacing: 1.5px;
-            margin-bottom: 5px;
-            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
-            padding-bottom: 5px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.25);
+            padding-bottom: 4px;
             font-weight: bold;
         }
+
         .btn-shortcut {
             background: rgba(0, 240, 255, 0.05);
             color: var(--text-main);
-            border: 1px solid rgba(0, 240, 255, 0.2);
+            border: 1px solid rgba(0, 240, 255, 0.25);
             padding: 10px;
             text-align: left;
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
             border-radius: 2px;
         }
-        .btn-shortcut:hover {
+
+        .btn-shortcut:hover, .btn-shortcut:active {
             background: rgba(0, 240, 255, 0.2);
             color: #fff;
             border-color: var(--neon-cyan);
-            box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
         }
+
+        /* CONTENEDOR DEL CHAT */
         #chat-container {
             flex: 1;
             background: var(--panel-bg);
-            border: 1px solid rgba(0, 240, 255, 0.4);
+            border: 1px solid rgba(0, 240, 255, 0.3);
             border-radius: 4px;
             overflow-y: auto;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
         }
+
         .mensaje {
-            padding: 12px 16px;
-            border-radius: 2px;
-            max-width: 85%;
-            line-height: 1.5;
+            padding: 10px 14px;
+            border-radius: 3px;
+            max-width: 88%;
+            line-height: 1.4;
             word-break: break-word;
             white-space: pre-wrap;
+            font-size: 0.9rem;
+            animation: fadeIn 0.3s ease-in-out;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .usuario {
-            background: rgba(0, 240, 255, 0.08);
-            color: #8be9fd;
+            background: rgba(0, 240, 255, 0.1);
+            color: #9feeff;
             align-self: flex-end;
             border-right: 3px solid var(--neon-cyan);
+            border-top: 1px solid rgba(0, 240, 255, 0.2);
         }
+
         .ultron {
-            background: rgba(255, 0, 60, 0.08);
-            color: #ffb86c;
+            background: rgba(255, 0, 60, 0.1);
+            color: #ffc2cd;
             align-self: flex-start;
             border-left: 3px solid var(--neon-red);
+            border-top: 1px solid rgba(255, 0, 60, 0.2);
+            box-shadow: var(--border-red-glow);
         }
+
+        .sistema {
+            background: rgba(255, 180, 0, 0.1);
+            color: var(--neon-amber);
+            align-self: center;
+            border: 1px solid var(--neon-amber);
+            font-size: 0.8rem;
+        }
+
+        /* ENTRADA DE TEXTO Y BOTONES */
         .input-area {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 8px;
+            margin-top: 10px;
             align-items: center;
         }
+
         textarea {
             flex: 1;
             background: var(--panel-bg);
@@ -179,50 +242,86 @@ HTML_TEMPLATE = """
             color: #ffffff;
             padding: 12px;
             font-family: monospace;
-            font-size: 1rem;
-            border-radius: 2px;
+            font-size: 0.95rem;
+            border-radius: 3px;
             resize: none;
-            height: 24px;
-        }
-        button.action-btn {
-            background: rgba(0, 240, 255, 0.1);
-            color: var(--neon-cyan);
-            border: 1px solid var(--neon-cyan);
             height: 48px;
-            width: 48px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            outline: none;
+            box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.15);
         }
-        button.action-btn:hover {
-            background: var(--neon-cyan);
-            color: var(--bg-deep);
-            box-shadow: 0 0 10px var(--neon-cyan);
+
+        textarea:focus {
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
         }
-        button.recording {
-            background: var(--neon-red) !important;
-            color: #fff !important;
-            border-color: var(--neon-red) !important;
-            box-shadow: 0 0 15px var(--neon-red) !important;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
+
         button.enviar {
             background: var(--neon-cyan);
             color: var(--bg-deep);
             border: none;
-            padding: 0 25px;
+            padding: 0 20px;
             height: 48px;
             font-weight: bold;
             font-family: monospace;
             cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            border-radius: 2px;
+        }
+
+        button.enviar:hover, button.enviar:active {
+            box-shadow: 0 0 12px var(--neon-cyan);
+            background: #e0ffff;
+        }
+
+        /* MEDIA QUERIES PARA CELULAR (MOBILE) */
+        @media (max-width: 768px) {
+            body {
+                padding: 6px;
+            }
+
+            .header-bar {
+                padding: 8px 12px;
+                clip-path: none;
+            }
+
+            h1 {
+                font-size: 0.85rem;
+                letter-spacing: 1.5px;
+            }
+
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .quick-panel {
+                width: 100%;
+                max-height: 70px;
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 6px;
+                align-items: center;
+            }
+
+            .panel-title {
+                display: none;
+            }
+
+            .btn-shortcut {
+                white-space: nowrap;
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+
+            .mensaje {
+                max-width: 95%;
+                font-size: 0.85rem;
+            }
+
+            button.enviar {
+                padding: 0 14px;
+                font-size: 0.85rem;
+            }
         }
     </style>
 </head>
@@ -232,99 +331,28 @@ HTML_TEMPLATE = """
             <div class="reactor-core"></div>
             <h1>ULTRON WEB v4.0</h1>
         </div>
+        <div class="status-badge">ONLINE // HUD</div>
     </div>
     
     <div class="main-layout">
         <div class="quick-panel">
             <div class="panel-title">// CONSULTAS IA</div>
-            <button class="btn-shortcut" onclick="ejecutarComandoWeb('Hola Ultron, preséntate.')">⚡ Saludo Inicial</button>
-            <button class="btn-shortcut" onclick="ejecutarComandoWeb('Cuéntame un chiste técnico.')">🃏 Chiste Técnico</button>
-            <button class="btn-shortcut" onclick="ejecutarComandoWeb('¿Qué hora es?')">🕒 Consultar Hora</button>
+            <button class="btn-shortcut" onclick="ejecutarComandoWeb('Hola Ultron, preséntate brevemente.')">⚡ Saludo</button>
+            <button class="btn-shortcut" onclick="ejecutarComandoWeb('Cuéntame un chiste técnico corto.')">🃏 Chiste</button>
+            <button class="btn-shortcut" onclick="ejecutarComandoWeb('¿Cuál es tu estado actual de sistemas?')">📊 Estado</button>
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron">HUD Web Público de Ultron v4.0 en línea. Presiona 🎤 para dictar por voz.</div>
+            <div class="mensaje ultron">HUD Web Avanzado de Ultron en línea. Interfaz futurista lista. ¿En qué puedo ayudarte?</div>
         </div>
     </div>
 
     <div class="input-area">
-        <button id="micBtn" class="action-btn" onclick="toggleVoz()" title="Hablar por micrófono">🎤</button>
-        <textarea id="userInput" placeholder="Escribe tu mensaje o usa el micrófono..." autofocus onkeydown="if(event.key==='Enter'){event.preventDefault();enviarMensaje();}"></textarea>
+        <textarea id="userInput" placeholder="Escribe tu mensaje a Ultron..." autofocus onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();enviarMensaje();}"></textarea>
         <button class="enviar" onclick="enviarMensaje()">ENVIAR</button>
     </div>
 
     <script>
-        let recognition = null;
-        let isRecording = false;
-
-        function toggleVoz() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
-            if (!SpeechRecognition) {
-                mostrarSistemaMsg("Este navegador no soporta reconocimiento de voz nativo. Prueba en Chrome, Edge o Safari.");
-                return;
-            }
-
-            if (isRecording) {
-                if (recognition) recognition.stop();
-                stopRecording();
-                return;
-            }
-
-            // Inicialización limpia directa
-            recognition = new SpeechRecognition();
-            recognition.lang = 'es-ES';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
-            recognition.onstart = () => {
-                isRecording = true;
-                document.getElementById('micBtn').classList.add('recording');
-                mostrarSistemaMsg("🎤 Escuchando... habla ahora.");
-            };
-
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                document.getElementById('userInput').value = transcript;
-                stopRecording();
-                enviarMensaje();
-            };
-
-            recognition.onerror = (event) => {
-                console.error("Error de voz:", event.error);
-                stopRecording();
-                if (event.error === 'not-allowed') {
-                    mostrarSistemaMsg("Permiso bloqueado por el navegador. Toca el candado o ícono al lado de la URL para dar permiso explícito de micrófono a este sitio.");
-                } else if (event.error === 'no-speech') {
-                    mostrarSistemaMsg("No se escuchó ningún sonido. Inténtalo de nuevo.");
-                } else {
-                    mostrarSistemaMsg("Estado de voz: " + event.error);
-                }
-            };
-
-            recognition.onend = () => {
-                stopRecording();
-            };
-
-            try {
-                recognition.start();
-            } catch (e) {
-                console.error(e);
-                stopRecording();
-            }
-        }
-
-        function stopRecording() {
-            isRecording = false;
-            document.getElementById('micBtn').classList.remove('recording');
-        }
-
-        function mostrarSistemaMsg(texto) {
-            const container = document.getElementById('chat-container');
-            container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-cyan);"><b>[SISTEMA]:</b> ${texto}</div>`;
-            container.scrollTop = container.scrollHeight;
-        }
-
         async function enviarMensaje() {
             const input = document.getElementById('userInput');
             const texto = input.value.trim();
@@ -345,7 +373,7 @@ HTML_TEMPLATE = """
                 container.innerHTML += `<div class="mensaje ultron"><b>Ultron:</b>\n${escapeHtml(data.respuesta)}</div>`;
                 container.scrollTop = container.scrollHeight;
             } catch (error) {
-                container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-red);"><b>Error:</b> Sin conexión.</div>`;
+                container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-red);"><b>Error:</b> Pérdida de enlace con el servidor.</div>`;
             }
         }
 
