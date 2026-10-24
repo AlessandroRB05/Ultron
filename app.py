@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD v3.9.8 — VERSIÓN PÚBLICA OPTIMIZADA (RESPUESTAS CORTAS)
+# ULTRON WEB HUD v4.0 — VOZ Y RESPUESTAS OPTIMIZADAS
 # ==============================================================================
 
 import os
@@ -7,11 +7,9 @@ import sys
 import logging
 from flask import Flask, render_template_string, request, jsonify
 
-# Importar el SDK oficial de Google GenAI
 from google import genai
 from google.genai import types
 
-# Configuración de logs
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -21,7 +19,6 @@ logger = logging.getLogger("UltronWebHUD")
 
 app_flask = Flask(__name__)
 
-# Inicializar el cliente de Gemini usando la variable de entorno GEMINI_API_KEY
 api_key = os.getenv("GEMINI_API_KEY")
 client = None
 if api_key:
@@ -33,14 +30,13 @@ if api_key:
 else:
     logger.warning("GEMINI_API_KEY no encontrada en las variables de entorno.")
 
-# Template HTML adaptado para uso web público seguro
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULTRON // Web HUD v3.9.8</title>
+    <title>ULTRON // Web HUD v4.0</title>
     <style>
         :root {
             --bg-deep: #05070b;
@@ -188,6 +184,36 @@ HTML_TEMPLATE = """
             resize: none;
             height: 24px;
         }
+        button.action-btn {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--neon-cyan);
+            border: 1px solid var(--neon-cyan);
+            height: 48px;
+            width: 48px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        button.action-btn:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-deep);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+        button.recording {
+            background: var(--neon-red) !important;
+            color: #fff !important;
+            border-color: var(--neon-red) !important;
+            box-shadow: 0 0 15px var(--neon-red) !important;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
         button.enviar {
             background: var(--neon-cyan);
             color: var(--bg-deep);
@@ -204,7 +230,7 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON WEB v3.9.8</h1>
+            <h1>ULTRON WEB v4.0</h1>
         </div>
     </div>
     
@@ -217,16 +243,70 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron">HUD Web Público de Ultron en línea. ¿En qué puedo ayudarte?</div>
+            <div class="mensaje ultron">HUD Web Público de Ultron v4.0 en línea. Reconocimiento de voz listo. ¿En qué puedo ayudarte?</div>
         </div>
     </div>
 
     <div class="input-area">
-        <textarea id="userInput" placeholder="Escribe tu mensaje..." autofocus onkeydown="if(event.key==='Enter'){event.preventDefault();enviarMensaje();}"></textarea>
+        <button id="micBtn" class="action-btn" onclick="toggleVoz()" title="Hablar por micrófono">🎤</button>
+        <textarea id="userInput" placeholder="Escribe tu mensaje o usa el micrófono..." autofocus onkeydown="if(event.key==='Enter'){event.preventDefault();enviarMensaje();}"></textarea>
         <button class="enviar" onclick="enviarMensaje()">ENVIAR</button>
     </div>
 
     <script>
+        let recognition = null;
+        let isRecording = false;
+
+        // Configuración de reconocimiento de voz del navegador
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('userInput').value = transcript;
+                stopRecording();
+                enviarMensaje();
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Error de voz:", event.error);
+                stopRecording();
+            };
+
+            recognition.onend = () => {
+                stopRecording();
+            };
+        }
+
+        function toggleVoz() {
+            if (!recognition) {
+                alert("Tu navegador o dispositivo no soporta reconocimiento de voz nativo.");
+                return;
+            }
+
+            if (isRecording) {
+                recognition.stop();
+                stopRecording();
+            } else {
+                try {
+                    recognition.start();
+                    isRecording = true;
+                    document.getElementById('micBtn').classList.add('recording');
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            document.getElementById('micBtn').classList.remove('recording');
+        }
+
         async function enviarMensaje() {
             const input = document.getElementById('userInput');
             const texto = input.value.trim();
@@ -274,13 +354,11 @@ def chat_web():
     
     if client:
         try:
-            # Instrucciones del sistema para asegurar concisión y tono
             system_instruction = (
                 "Eres Ultron, un asistente cibernético de inteligencia artificial avanzado y conciso. "
                 "Sé directo, breve y preciso. Responde en pocas oraciones (máximo 2 a 3 frases) salvo que el usuario pida explícitamente una explicación detallada."
             )
 
-            # Intentar primero con gemini-2.5-flash
             try:
                 response = client.models.generate_content(
                     model='gemini-2.5-flash',
@@ -294,7 +372,6 @@ def chat_web():
                 respuesta_texto = response.text
             except Exception as e_primary:
                 logger.warning(f"Error en modelo primario gemini-2.5-flash: {e_primary}. Intentando con gemini-2.0-flash...")
-                # Fallback en caso de saturación o error
                 response = client.models.generate_content(
                     model='gemini-2.0-flash',
                     contents=mensaje_usuario,
