@@ -1,5 +1,5 @@
 # ==============================================================================
-# ULTRON WEB HUD — ORIGINAL STABLE ENGINE RESTORED
+# ULTRON WEB HUD v5.2 — EXTENDED CONVERSATIONAL RESPONSES
 # ==============================================================================
 
 import os
@@ -36,7 +36,7 @@ if gemini_api_key:
     except Exception as e:
         logger.error(f"Error al inicializar Gemini: {e}")
 
-# Prompt de personalidad oficial de Ultron Web
+# Prompt optimizado para respuestas amplias, fluidas y detalladas
 SYSTEM_PROMPT = (
     "Eres Ultron Web, un asistente virtual de alta tecnología, sumamente inteligente, sofisticado y servicial. "
     "Tu tono es natural, dinámico, articulado y amigable, equilibrando lo casual con un toque profesional. "
@@ -263,11 +263,11 @@ HTML_TEMPLATE = """
     <div class="header-bar">
         <div class="brand-area">
             <div class="reactor-core"></div>
-            <h1>ULTRON // HUD STABLE</h1>
+            <h1>ULTRON // HUD v5.2</h1>
         </div>
         <div class="hud-metrics">
             <span>CORE: ONLINE</span>
-            <span>ENGINE: HYBRID STABLE</span>
+            <span>ENGINE: LLAMA 3.1 70B</span>
             <span>VISION: READY</span>
         </div>
     </div>
@@ -281,7 +281,7 @@ HTML_TEMPLATE = """
         </div>
 
         <div id="chat-container">
-            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas estables activos. Enlace neuronal establecido. ¿En qué te ayudo hoy?</div>
+            <div class="mensaje ultron"><b>ULTRON:</b>\nSistemas v5.2 activos. Motor Llama 3.1 70B configurado para ofrecerte respuestas extensas y detalladas. ¿En qué trabajamos hoy?</div>
         </div>
     </div>
 
@@ -371,14 +371,10 @@ HTML_TEMPLATE = """
             document.getElementById('micBtn').classList.remove('recording');
         }
 
-        fn_msg_sys = function(texto) {
+        function mostrarMsgSistema(texto) {
             const container = document.getElementById('chat-container');
             container.innerHTML += `<div class="mensaje ultron" style="color: var(--neon-amber);"><b>[SISTEMA]:</b> ${texto}</div>`;
             container.scrollTop = container.scrollHeight;
-        };
-
-        function mostrarMsgSistema(texto) {
-            fn_msg_sys(texto);
         }
 
         async function enviarMensaje() {
@@ -466,7 +462,7 @@ def chat_web():
     err_groq_msg = ""
     err_gemini_msg = ""
 
-    # 1. MOTOR PRIMARIO: GROQ (Usando un modelo genérico ligero súper compatible)
+    # 1. MOTOR PRIMARIO: GROQ (LLAMA 3.1 70B CON CAPACIDAD EXTENDIDA)
     if groq_api_key:
         try:
             if imagen_usuario:
@@ -479,20 +475,20 @@ def chat_web():
                             {"type": "image_url", "image_url": {"url": imagen_usuario}}
                         ]}
                     ],
-                    "max_tokens": 1500
+                    "max_tokens": 2048
                 }
             else:
                 payload = {
-                    "model": "llama-3.1-8b-instant",
+                    "model": "llama-3.1-70b-versatile",
                     "messages": [
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": mensaje_usuario}
                     ],
-                    "max_tokens": 1500
+                    "max_tokens": 2048
                 }
 
             respuesta_texto = pedir_a_groq_nativo(payload)
-            logger.info("Respuesta procesada exitosamente vía Groq.")
+            logger.info("Respuesta procesada vía Groq Llama 3.1 70B.")
             return jsonify({"respuesta": respuesta_texto})
             
         except Exception as e_groq:
@@ -501,7 +497,7 @@ def chat_web():
     else:
         err_groq_msg = "Variable GROQ_API_KEY no configurada."
 
-    # 2. MOTOR DE RESPALDO: GEMINI (Usando el SDK estándar nativo)
+    # 2. MOTOR DE RESPALDO: GEMINI 1.5 FLASH
     if gemini_client:
         try:
             if imagen_usuario and "," in imagen_usuario:
@@ -510,7 +506,7 @@ def chat_web():
                 image_bytes = base64.b64decode(encoded)
 
                 response = gemini_client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-1.5-flash',
                     contents=[
                         types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                         mensaje_usuario
@@ -518,26 +514,26 @@ def chat_web():
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,
-                        max_output_tokens=1500
+                        max_output_tokens=2048
                     )
                 )
             else:
                 response = gemini_client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-1.5-flash',
                     contents=mensaje_usuario,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
                         temperature=0.7,
-                        max_output_tokens=1500
+                        max_output_tokens=2048
                     )
                 )
 
-            logger.info("Respuesta procesada vía Gemini de respaldo.")
+            logger.info("Respuesta procesada vía Gemini 1.5 Flash.")
             return jsonify({"respuesta": response.text})
             
         except Exception as e_gemini:
             err_gemini_msg = str(e_gemini)
-            logger.error(f"Error en Gemini: {e_gemini}")
+            logger.error(f"Error en Gemini: {err_gemini_msg}")
     else:
         err_gemini_msg = "Cliente Gemini no configurado."
 
